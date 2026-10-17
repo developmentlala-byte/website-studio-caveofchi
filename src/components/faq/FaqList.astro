@@ -1,0 +1,57 @@
+---
+import { FAQ } from "@/data/faq";
+---
+<div class="faq-list">
+  {FAQ.map((item, index) => (
+    <details open={index === 0}>
+      <summary>{item.q}</summary>
+      <p>{item.a}</p>
+    </details>
+  ))}
+</div>
+
+<style>
+  .faq-list {
+    max-width: 850px;
+    margin: 0 auto var(--space-6);
+  }
+
+  details {
+    border-bottom: 1px solid var(--line);
+  }
+
+  summary {
+    position: relative;
+    padding: 21px 38px 21px 0;
+    color: var(--umber);
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-size: 24px;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary::after {
+    position: absolute;
+    right: 4px;
+    content: "+";
+    font-family: var(--font-body);
+    font-size: 20px;
+  }
+
+  details[open] summary::after {
+    content: "−";
+  }
+
+  details p {
+    max-width: 700px;
+    margin: 0;
+    padding: 0 32px 22px 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+</style>

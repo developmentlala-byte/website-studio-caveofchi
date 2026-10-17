@@ -1,0 +1,36 @@
+:root {
+  color-scheme: light;
+  --paper: #f7f1ea;
+  --paper-light: #fbf8f3;
+  --sand: #e9dfd2;
+  --clay: #b97557;
+  --umber: #41352d;
+  --ink: #2d2621;
+  --muted: #74665b;
+  --line: #d9cec1;
+  --white: #fffdf9;
+  --umber-overlay-strong: rgb(35 27 23 / 65%);
+  --umber-overlay-medium: rgb(35 27 23 / 56%);
+  --umber-overlay-soft: rgb(35 27 23 / 35%);
+  --umber-overlay-subtle: rgb(35 27 23 / 10%);
+  --umber-backdrop: rgb(32 25 20 / 68%);
+  --paper-outline-strong: rgb(255 253 249 / 62%);
+  --paper-outline: rgb(255 253 249 / 60%);
+  --paper-outline-soft: rgb(255 253 249 / 55%);
+  --paper-outline-subtle: rgb(255 253 249 / 50%);
+  --paper-separator: rgb(255 253 249 / 20%);
+  --font-heading: "Cormorant Garamond", Georgia, serif;
+  --font-body: "DM Sans", Arial, sans-serif;
+  --radius-sm: 6px;
+  --radius-md: 14px;
+  --radius-lg: 24px;
+  --shadow-card: 0 16px 44px rgb(45 38 33 / 10%);
+  --content-width: 1290px;
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 40px;
+  --space-5: 64px;
+  --space-6: 105px;
+  --eyebrow-color: #2e2924;
+}

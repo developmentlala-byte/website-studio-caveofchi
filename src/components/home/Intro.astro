@@ -1,0 +1,121 @@
+---
+const STATS = [
+  { value: '02', label: 'Intimate caves' },
+  { value: '10', label: 'Seats per studio*' },
+  { value: '∞', label: 'Ways to connect' },
+];
+---
+<section class="intro section" id="story">
+  <div class="container intro-inner">
+    <div class="intro-head">
+      <div class="eyebrow">01 / The idea behind our space</div>
+      <h2 class="heading">More than<br />a <em class="script-cst-color">place.</em><br />A feeling.</h2>
+    </div>
+    <div class="intro-body">
+      <p>
+        Cave of Chi lahir dari keyakinan sederhana: terkadang yang kita butuhkan hanyalah sebuah
+        ruang untuk kembali terhubung—dengan diri sendiri, dengan karya, dan dengan orang-orang baru.
+      </p>
+      <p>
+        Dari merangkai bunga sampai sound healing, setiap pengalaman dirancang terasa personal,
+        hangat, dan jauh dari hiruk-pikuk keseharian.
+      </p>
+      <div class="intro-stats">
+        {STATS.map((s) => (
+          <div class="stat">
+            <strong>{s.value}</strong>
+            <span>{s.label}</span>
+          </div>
+        ))}
+      </div>
+      <p class="intro-note">*Kapasitas konsep awal, disesuaikan dengan jenis aktivitas.</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .intro {
+    background: var(--paper);
+  }
+
+  .intro-inner {
+    display: grid;
+    width: min(var(--content-width), calc(100% - 48px));
+    padding-inline: 48px;
+    grid-template-columns: 1fr 1.1fr;
+    gap: 12%;
+    align-items: center;
+  }
+
+  .intro-head .heading {
+    margin: 20px 0;
+    color: #2e2924;
+    font-size: clamp(65px, 7vw, 102px);
+    font-family: "Cormorant Garamond", Georgia, serif;
+  }
+
+  .intro-body {
+    max-width: 470px;
+    padding: 55px 0 0;
+    color: #6a5a4b;
+    font-size: 15px;
+    line-height: 2.1;
+  }
+
+  .intro-body > p:not(.intro-note) {
+    margin: 15px 0;
+  }
+
+  .intro-body > p:first-child {
+    margin-top: 0;
+  }
+
+  .intro-stats {
+    display: flex;
+    gap: 45px;
+    margin-top: 32px;
+    padding-top: 22px;
+    border-top: 1px solid rgb(70 52 40 / 17%);
+  }
+
+  .stat {
+    display: block;
+  }
+
+  .stat strong {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 42px;
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .stat span {
+    display: block;
+    margin-top: 5px;
+    color: #847469;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .intro-note {
+    margin: 12px 0;
+    color: #796c62;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 740px) {
+    .intro-inner {
+      width: 100%;
+      grid-template-columns: 1fr;
+      padding-inline: 22px;
+      gap: var(--space-3);
+      align-items: start;
+    }
+
+    .intro-head .heading {
+      font-size: var(--fs-h2);
+    }
+  }
+</style>

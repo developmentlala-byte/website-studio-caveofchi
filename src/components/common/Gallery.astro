@@ -1,0 +1,286 @@
+---
+interface GalleryImage { url: string; altText?: string | null }
+interface Props { images: GalleryImage[]; label: string; ratio?: string }
+const { images, label, ratio = '3 / 2' } = Astro.props;
+const total = images.length;
+const cover = images[0];
+---
+{cover && (
+  <div class="gallery" data-gallery role="group" aria-label={`Galeri ${label}`} style={`--ratio:${ratio}`}>
+    <div class="stage" data-stage-wrap>
+      <img
+        class="stage-img"
+        data-stage
+        src={cover.url}
+        alt={cover.altText || label}
+        loading="eager"
+        fetchpriority="high"
+        decoding="async"
+      />
+
+      {total > 1 && (
+        <>
+          <button type="button" class="nav prev" data-prev aria-label="Foto sebelumnya">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+          </button>
+          <button type="button" class="nav next" data-next aria-label="Foto berikutnya">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+          <span class="count" aria-live="polite"><span data-current>1</span> / {total}</span>
+        </>
+      )}
+    </div>
+
+    {total > 1 && (
+      <ul class="thumbs" aria-label="Pilih foto">
+        {images.map((img, i) => (
+          <li>
+            <button
+              type="button"
+              class="thumb"
+              data-src={img.url}
+              data-alt={img.altText || `Foto ${label} ${i + 1}`}
+              aria-label={`Lihat foto ${i + 1}`}
+              aria-current={i === 0 ? 'true' : undefined}
+            >
+              <img src={img.url} alt="" loading="lazy" decoding="async" />
+            </button>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+)}
+
+<style>
+  .gallery {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  /* ---------- Foto utama ---------- */
+  .stage {
+    position: relative;
+    aspect-ratio: var(--ratio, 3 / 2);
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background: var(--sand);
+    touch-action: pan-y;
+  }
+
+  .stage-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transition: opacity 220ms ease;
+  }
+
+  .stage-img.is-changing {
+    opacity: 0;
+  }
+
+  /* ---------- Panah ---------- */
+  .nav {
+    position: absolute;
+    top: 50%;
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--paper-light) 92%, transparent);
+    color: var(--umber);
+    cursor: pointer;
+    transform: translateY(-50%);
+    transition: background 200ms ease;
+  }
+
+  .nav:hover {
+    background: var(--paper-light);
+  }
+
+  .nav:focus-visible {
+    outline: 2px solid var(--paper-light);
+    outline-offset: 2px;
+  }
+
+  .prev { left: 12px; }
+  .next { right: 12px; }
+
+  .count {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    background: color-mix(in srgb, var(--paper-light) 92%, transparent);
+    color: var(--umber);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-label);
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- Thumbnail ---------- */
+  /* Lebarnya mengikuti foto utama; kalau fotonya banyak bisa digeser */
+  .thumbs {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(64px, 1fr);
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+    list-style: none;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .thumbs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .thumb {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: var(--sand);
+    cursor: pointer;
+    scroll-snap-align: start;
+  }
+
+  .thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* opacity: 0.5; */
+    transition: opacity 200ms ease;
+  }
+
+  .thumb:hover img {
+    opacity: 0.85;
+  }
+
+  /* Foto aktif: penuh + garis tipis di bawah */
+  .thumb[aria-current="true"] img {
+    opacity: 1;
+  }
+
+  .thumb::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 3px;
+    background: var(--umber);
+    transform: scaleX(0);
+    transition: transform 220ms ease;
+  }
+
+  .thumb[aria-current="true"]::after {
+    transform: scaleX(1);
+  }
+
+  .thumb:focus-visible {
+    outline: 2px solid var(--umber);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 740px) {
+    .stage { border-radius: var(--radius-sm); }
+    .thumbs { grid-auto-columns: 64px; }
+    .nav { width: 32px; height: 32px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stage-img,
+    .nav,
+    .thumb img,
+    .thumb::after {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-gallery]').forEach((root) => {
+    const wrap = root.querySelector<HTMLElement>('[data-stage-wrap]');
+    const stage = root.querySelector<HTMLImageElement>('[data-stage]');
+    const thumbs = Array.from(root.querySelectorAll<HTMLButtonElement>('.thumb'));
+    const current = root.querySelector<HTMLElement>('[data-current]');
+    if (!wrap || !stage || thumbs.length < 2) return;
+
+    let index = 0;
+    let request = 0;
+
+    const show = (next: number) => {
+      index = (next + thumbs.length) % thumbs.length;
+      const thumb = thumbs[index];
+      const src = thumb.dataset.src ?? '';
+      const id = ++request;
+
+      thumbs.forEach((t, i) => {
+        if (i === index) t.setAttribute('aria-current', 'true');
+        else t.removeAttribute('aria-current');
+      });
+      if (current) current.textContent = String(index + 1);
+      thumb.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+
+      // Muat foto penuh dulu, baru ditukar, supaya tidak ada kilatan buram
+      stage.classList.add('is-changing');
+      const preload = new Image();
+      preload.decoding = 'async';
+      preload.onload = () => {
+        if (id !== request) return;
+        stage.src = src;
+        stage.alt = thumb.dataset.alt ?? '';
+        stage.classList.remove('is-changing');
+      };
+      preload.onerror = () => {
+        if (id !== request) return;
+        stage.classList.remove('is-changing');
+      };
+      preload.src = src;
+    };
+
+    thumbs.forEach((t, i) => t.addEventListener('click', () => show(i)));
+    root.querySelector('[data-prev]')?.addEventListener('click', () => show(index - 1));
+    root.querySelector('[data-next]')?.addEventListener('click', () => show(index + 1));
+
+    root.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') show(index - 1);
+      if (e.key === 'ArrowRight') show(index + 1);
+    });
+
+    // Geser di layar sentuh
+    let startX = 0;
+    wrap.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true });
+    wrap.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - startX;
+      if (Math.abs(dx) > 40) show(index + (dx < 0 ? 1 : -1));
+    }, { passive: true });
+
+    // Preload semua foto agar perpindahan terasa instan
+    thumbs.forEach((t) => {
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = t.dataset.src ?? '';
+    });
+  });
+</script>

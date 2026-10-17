@@ -1,0 +1,270 @@
+---
+import BookButton from '@/components/booking/BookButton.astro';
+import type { CaveEvent } from '@/lib/events';
+import { getCategoryLabel } from '@/lib/site';
+import {
+  formatDateShort,
+  formatDuration,
+  formatIDR,
+  formatSeatsLeft,
+  formatTime,
+} from '@/lib/format';
+
+type EventSession = CaveEvent['data']['sessions'][number];
+interface Props { event: CaveEvent }
+const { event } = Astro.props;
+const d = event.data;
+const sessions: EventSession[] = (d.sessions.length > 0
+  ? d.sessions
+  : [{
+      sessionId: d.eventId,
+      startsAt: d.startsAt,
+      space: d.space,
+      price: d.price,
+      capacity: d.capacity,
+      seatsLeft: d.seatsLeft,
+      durationMinutes: d.durationMinutes,
+      studioName: d.studioName,
+    }])
+  .filter((session) => session.startsAt.getTime() >= Date.now())
+  .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+const featuredSession =
+  sessions.find((session) => session.seatsLeft > 0) ?? sessions[0];
+const sessionOptions = sessions.map((session) => ({
+  sessionId: session.sessionId,
+  startsAt: session.startsAt.toISOString(),
+  durationMinutes: session.durationMinutes || d.durationMinutes,
+  price: session.price,
+  seatsLeft: session.seatsLeft,
+  studioSlug: session.space,
+  studioName: session.studioName,
+}));
+
+// Harga: kalau harga antar sesi berbeda, tampilkan yang termurah dengan label
+// "Starting from"; kalau sama, tampilkan harga sesi itu per peserta.
+const prices = sessions.map((session) => session.price);
+const hasPriceRange = new Set(prices).size > 1;
+const displayPrice = hasPriceRange
+  ? Math.min(...prices)
+  : featuredSession?.price;
+const priceLabel = hasPriceRange ? 'Starting from' : 'Per peserta';
+---
+<article
+  class="event-card"
+  data-event-card
+  data-event-slug={event.id}
+  data-event-title={d.title}
+  data-sessions={JSON.stringify(sessionOptions)}
+  data-category={d.category ?? 'uncategorized'}
+>
+  <div class="event-image">
+    {d.imageUrl && <img src={d.imageUrl} alt="" width="640" height="474" loading="lazy" />}
+    <span class="event-category">{getCategoryLabel(d.category)}</span>
+  </div>
+  <div class="event-info">
+    <div class="event-sub" data-featured-studio>
+      {featuredSession?.studioName ?? d.studioName}
+      {featuredSession && <>&nbsp; • &nbsp;{formatDuration(featuredSession.durationMinutes || d.durationMinutes)}</>}
+    </div>
+    <h3><a href={`/experiences/${event.id}`}>{d.title}</a></h3>
+    <div class="event-details">
+      <span data-featured-date>
+        {featuredSession
+          ? `${formatDateShort(featuredSession.startsAt)} · ${formatTime(featuredSession.startsAt)} WIB`
+          : 'Jadwal segera hadir'}
+      </span>
+      <span data-featured-seats>
+        {featuredSession ? formatSeatsLeft(featuredSession.seatsLeft) : 'Belum ada sesi tersedia'}
+      </span>
+    </div>
+    <div class="event-footer">
+      <div class="event-price">
+        <small>{priceLabel}</small>
+        <span data-featured-price>{displayPrice !== undefined ? formatIDR(displayPrice) : '–'}</span>
+      </div>
+      {featuredSession ? (
+        <BookButton event={event} session={featuredSession}>
+          {featuredSession.seatsLeft > 0 ? 'Reserve seat ↗' : 'Kuota habis'}
+        </BookButton>
+      ) : (
+        <button type="button" class="book unavailable" disabled>Belum tersedia</button>
+      )}
+    </div>
+  </div>
+</article>
+
+<style>
+  /* Nilai mengikuti card referensi (index.html) */
+  .event-card {
+    position: relative;
+    border: 1px solid #ece4da;
+    background: #f7f2ea;
+    transition:
+      box-shadow 0.2s,
+      transform 0.2s;
+  }
+
+  .event-card:hover {
+    box-shadow: 0 20px 45px #604a301c;
+    transform: translateY(-3px);
+  }
+
+  .event-card[hidden] {
+    display: none;
+  }
+
+  .event-image {
+    position: relative;
+    aspect-ratio: 1.35;
+    overflow: hidden;
+    background: #ddc2a6;
+  }
+
+  .event-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s;
+  }
+
+  .event-card:hover .event-image img {
+    transform: scale(1.05);
+  }
+
+  .event-category {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    padding: 9px 12px;
+    border-radius: 2px;
+    background: #f9f3e9eb;
+    backdrop-filter: blur(8px);
+    color: #493d31;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .event-info {
+    padding: 23px 22px 21px;
+  }
+
+  .event-sub {
+    color: #9b806b;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .event-info h3 {
+    margin: 8px 0 17px;
+    color: var(--umber);
+    font-family: var(--font-heading);
+    font-size: 37px;
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+
+  .event-info h3 a {
+    color: inherit;
+  }
+
+  .event-details {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 13px 0;
+    border-top: 1px solid #ded4c8;
+    color: #70645b;
+    font-size: 11px;
+  }
+
+  .event-details span:last-child {
+    text-align: right;
+  }
+
+  .event-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 15px;
+  }
+
+  .event-price {
+    color: var(--umber);
+    font-family: var(--font-heading);
+    font-size: 29px;
+    font-weight: 600;
+    line-height: 1.1;
+  }
+
+  .event-price small {
+    display: block;
+    margin-bottom: 3px;
+    color: #807267;
+    font: 9px var(--font-body);
+  }
+
+  /* Tombol dirender BookButton, jadi distyle lewat :global */
+  .event-footer :global(.book),
+  .event-footer :global(button) {
+    padding: 12px 17px;
+    border: none;
+    border-radius: 0;
+    background: var(--umber);
+    color: #fff;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    line-height: normal;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition: background 0.2s;
+  }
+
+  .event-footer :global(.book:hover),
+  .event-footer :global(button:hover:not(:disabled)) {
+    background: #8a644e;
+  }
+
+  .event-footer :global(.book:disabled),
+  .event-footer :global(button:disabled),
+  .unavailable {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  @media (max-width: 740px) {
+    .event-image {
+      aspect-ratio: 1.55;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .event-footer {
+      align-items: stretch;
+      flex-direction: column;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .event-card,
+    .event-image img {
+      transition: none;
+    }
+
+    .event-card:hover {
+      transform: none;
+    }
+
+    .event-card:hover .event-image img {
+      transform: none;
+    }
+  }
+</style>

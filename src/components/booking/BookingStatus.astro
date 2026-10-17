@@ -1,0 +1,214 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Detail booking — Cave of Chi"
+  description="Detail event dan status pembayaran booking Cave of Chi."
+  noindex
+>
+  <section class="booking-page section container" aria-labelledby="booking-title">
+    <div class="eyebrow">Booking · Midtrans</div>
+    <h1 id="booking-title" class="heading">Detail booking Anda</h1>
+    <p class="lead" data-message aria-live="polite">
+      Kami sedang memeriksa status pembayaran Anda. Status booking hanya dikonfirmasi setelah pembayaran diverifikasi oleh Midtrans.
+    </p>
+    <dl class="booking-details" data-details hidden>
+      <div><dt>Kode booking</dt><dd data-code></dd></div>
+      <div><dt>Status pembayaran</dt><dd data-payment-status></dd></div>
+      <div><dt>Event</dt><dd data-event></dd></div>
+      <div><dt>Studio</dt><dd data-studio></dd></div>
+      <div><dt>Jadwal</dt><dd data-date></dd></div>
+      <div><dt>Jumlah peserta</dt><dd data-quantity></dd></div>
+      <div><dt>Harga per peserta</dt><dd data-unit-price></dd></div>
+      <div><dt>Total pembayaran</dt><dd data-total></dd></div>
+    </dl>
+    <div class="status-actions">
+      <a class="receipt-link" data-receipt hidden target="_blank" rel="noopener noreferrer">
+        Cetak / simpan kwitansi
+      </a>
+      <button type="button" data-retry hidden>Periksa status lagi</button>
+      <a href="/experiences">Lihat event lainnya</a>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import {
+    BookingError,
+    bookingReceiptUrl,
+    fetchBookingStatus,
+  } from "@/lib/api/bookings";
+  import { formatIDR, formatDateShort, formatTime } from "@/lib/format";
+
+  const message = document.querySelector<HTMLElement>("[data-message]");
+  const details = document.querySelector<HTMLDListElement>("[data-details]");
+  const retryButton = document.querySelector<HTMLButtonElement>("[data-retry]");
+  const receiptLink = document.querySelector<HTMLAnchorElement>("[data-receipt]");
+  const reference = new URLSearchParams(window.location.search).get("reference");
+  let checking = false;
+  let attempts = 0;
+
+  const setText = (selector: string, value: string) => {
+    const element = document.querySelector<HTMLElement>(selector);
+    if (element) element.textContent = value;
+  };
+
+  const checkStatus = async () => {
+    if (checking) return;
+    checking = true;
+    if (retryButton) retryButton.disabled = true;
+
+    if (!reference) {
+      if (message) message.textContent = "Kode booking tidak ditemukan. Silakan hubungi kami jika pembayaran Anda sudah terpotong.";
+      checking = false;
+      if (retryButton) retryButton.hidden = false;
+      return;
+    }
+
+    try {
+      const booking = await fetchBookingStatus(reference);
+      if (details) details.hidden = false;
+      if (retryButton) retryButton.hidden = true;
+      setText("[data-code]", booking.code);
+      setText("[data-payment-status]", booking.paymentStatus === "paid"
+        ? "Lunas"
+        : booking.paymentStatus === "pending"
+          ? "Menunggu pembayaran"
+          : booking.paymentStatus === "expired"
+            ? "Kedaluwarsa"
+            : "Gagal");
+      setText("[data-event]", booking.eventName);
+      setText("[data-studio]", booking.studioName);
+      setText("[data-date]", `${formatDateShort(new Date(booking.startsAt))} · ${formatTime(new Date(booking.startsAt))} WIB`);
+      setText("[data-quantity]", `${booking.quantity} peserta`);
+      setText("[data-unit-price]", `${formatIDR(booking.unitPrice)} / peserta`);
+      setText("[data-total]", formatIDR(booking.totalAmount));
+      if (receiptLink) {
+        receiptLink.href = bookingReceiptUrl(booking.code);
+        receiptLink.hidden = booking.paymentStatus !== "paid";
+      }
+
+      if (booking.bookingStatus === "confirmed" && booking.paymentStatus === "paid") {
+        if (message) message.textContent = "Pembayaran berhasil dikonfirmasi oleh Sistem. Booking Anda sudah aman.";
+        attempts = 20;
+      } else if (booking.bookingStatus === "payment_review") {
+        if (message) message.textContent = "Pembayaran diterima dan sedang diverifikasi tim kami. Simpan kode booking ini.";
+        attempts = 20;
+      } else if (["expired", "cancelled"].includes(booking.bookingStatus) || booking.paymentStatus === "failed") {
+        if (message) message.textContent = "Pembayaran belum berhasil dan penahanan kuota telah berakhir. Silakan buat booking baru untuk mencoba lagi.";
+        attempts = 20;
+      } else if (attempts < 20) {
+        if (message) message.textContent = "Pembayaran masih diproses. Status akan diperiksa kembali secara berkala.";
+        attempts += 1;
+        window.setTimeout(() => void checkStatus(), 3000);
+      } else {
+        if (message) message.textContent = "Status masih menunggu konfirmasi Midtrans. Anda dapat memeriksanya kembali sebentar lagi.";
+        if (retryButton) retryButton.hidden = false;
+      }
+    } catch (error) {
+      if (message) {
+        message.textContent = error instanceof BookingError
+          ? error.message
+          : "Status belum dapat diperiksa. Periksa koneksi Anda lalu coba lagi.";
+      }
+      if (retryButton) retryButton.hidden = false;
+    } finally {
+      checking = false;
+      if (retryButton) retryButton.disabled = false;
+    }
+  };
+
+  retryButton?.addEventListener("click", () => {
+    attempts = 0;
+    void checkStatus();
+  });
+  void checkStatus();
+</script>
+
+<style>
+  .booking-page {
+    min-height: 60vh;
+  }
+
+  .booking-page .heading {
+    margin: 12px 0;
+  }
+
+  .lead {
+    max-width: 650px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+
+  .booking-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin: 30px 0;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+  }
+
+  .booking-details[hidden] {
+    display: none;
+  }
+
+  .booking-details div {
+    min-width: 0;
+  }
+
+  .booking-details dt {
+    margin-bottom: 5px;
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  .booking-details dd {
+    margin: 0;
+    color: var(--umber);
+    font-size: 13px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .status-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .status-actions button {
+    min-height: 42px;
+    padding: 10px 16px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: var(--umber);
+    color: var(--paper-light);
+    cursor: pointer;
+  }
+
+  .status-actions a {
+    color: var(--umber);
+    font-size: 12px;
+  }
+
+  .status-actions .receipt-link {
+    display: inline-flex;
+    min-height: 42px;
+    align-items: center;
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    background: var(--umber);
+    color: var(--paper-light);
+  }
+
+  @media (max-width: 600px) {
+    .booking-details {
+      grid-template-columns: 1fr;
+      padding: 16px;
+    }
+  }
+</style>

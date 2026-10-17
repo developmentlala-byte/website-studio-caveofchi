@@ -1,0 +1,72 @@
+---
+import type { CaveEvent } from '@/lib/events';
+import { formatDateShort, formatTime } from '@/lib/format';
+
+type EventSession = CaveEvent['data']['sessions'][number];
+interface Props { event: CaveEvent; variant?: 'solid' | 'outline'; session?: EventSession }
+const { event, variant = 'solid', session } = Astro.props;
+const d = event.data;
+const sessionId = session?.sessionId ?? d.eventId;
+const startsAt = session?.startsAt ?? d.startsAt;
+const price = session?.price ?? d.price;
+const seatsLeft = session?.seatsLeft ?? d.seatsLeft;
+const soldOut = seatsLeft <= 0;
+const meta = `${session?.studioName ?? d.studioName} · ${formatDateShort(startsAt)} · ${formatTime(startsAt)} WIB`;
+---
+<button type="button" class:list={['book', variant]} data-book
+  data-session-id={sessionId} data-event-slug={event.id}
+  data-studio-slug={session?.space ?? d.space}
+  data-title={d.title} data-meta={meta}
+  data-price={price} data-seats={seatsLeft}
+  data-available-label={variant === 'outline' ? 'Book ↗' : 'Reserve seat ↗'}
+  disabled={soldOut}>
+  {soldOut ? 'Kuota habis' : <slot>Reserve seat ↗</slot>}
+</button>
+<style>
+  .book {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 13px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 10px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    transition: background 180ms ease, color 180ms ease;
+  }
+
+  .solid {
+    background: var(--umber);
+    color: var(--paper-light);
+  }
+
+  .solid:hover:not(:disabled) {
+    background: var(--clay);
+  }
+
+  .outline {
+    border-color: var(--line);
+    background: transparent;
+    color: var(--umber);
+  }
+
+  .outline:hover:not(:disabled) {
+    border-color: var(--umber);
+    background: var(--umber);
+    color: var(--paper-light);
+  }
+
+  .book:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .book {
+      transition: none;
+    }
+  }
+</style>

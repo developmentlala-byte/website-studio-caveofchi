@@ -1,0 +1,63 @@
+---
+import { Image } from 'astro:assets';
+import logo from '@/assets/images/logo-cave-of-chi.png';
+
+interface Props {
+  size?: 'md' | 'lg';
+}
+
+const { size = 'md' } = Astro.props;
+
+// Tinggi tampil (px). Gambar dibuat 2x lebih besar untuk layar retina,
+// lalu ukuran tampilnya diatur lewat CSS di bawah.
+const DISPLAY_HEIGHT = { md: 48, lg: 88 } as const;
+const height = DISPLAY_HEIGHT[size] * 2;
+---
+<a class:list={['brand', size]} href="/">
+  <Image
+    src={logo}
+    alt="Cave of Chi — Art. Space. Energy."
+    height={height}
+    class="brand-logo"
+    loading="eager"
+    fetchpriority="high"
+    decoding="async"
+  />
+</a>
+
+<style>
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 4px;
+    line-height: 0;
+    text-decoration: none;
+  }
+
+  .brand:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 4px;
+  }
+
+  /* Lebar mengikuti rasio asli gambar, jadi logo tidak pernah gepeng */
+  .brand-logo {
+    display: block;
+    width: auto;
+    height: 60px;
+    max-width: 100%;
+  }
+
+  .lg .brand-logo {
+    height: 88px;
+  }
+
+  @media (max-width: 740px) {
+    .brand-logo {
+      height: 45px;
+    }
+
+    .lg .brand-logo {
+      height: 72px;
+    }
+  }
+</style>

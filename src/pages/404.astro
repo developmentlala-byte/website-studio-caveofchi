@@ -1,0 +1,31 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+---
+<BaseLayout
+  title="Halaman tidak ditemukan — Cave of Chi"
+  description="Halaman yang kamu cari tidak tersedia."
+  noindex
+>
+  <section class="not-found section container">
+    <div class="eyebrow">404 / Page not found</div>
+    <h1 class="heading">Let's find<br /><em class="script">our way back.</em></h1>
+    <a href="/">Kembali ke beranda <span aria-hidden="true">↗</span></a>
+  </section>
+</BaseLayout>
+
+<style>
+  .not-found {
+    min-height: 55vh;
+  }
+
+  .not-found .heading {
+    margin: 18px 0 30px;
+  }
+
+  .not-found a {
+    display: inline-flex;
+    gap: 14px;
+    color: var(--umber);
+    font-size: 12px;
+  }
+</style>

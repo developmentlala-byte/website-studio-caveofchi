@@ -1,0 +1,23 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ExperiencesSection from "@/components/events/ExperiencesSection.astro";
+import PageHeader from "@/components/layout/PageHeader.astro";
+import { getUpcomingEvents } from "@/lib/events";
+import { fetchStudios } from "@/lib/api/studios";
+
+const [events, studios] = await Promise.all([
+  getUpcomingEvents(),
+  fetchStudios(),
+]);
+---
+<BaseLayout
+  title="Experiences — Cave of Chi"
+  description="Semua workshop dan ritual mendatang di Cave of Chi."
+>
+  <PageHeader
+    eyebrow="Experiences"
+    title="Find your ritual."
+    description="Workshop kreatif, ritual healing, dan pertemuan komunitas."
+  />
+  <ExperiencesSection events={events} studios={studios} showIntro={false} />
+</BaseLayout>

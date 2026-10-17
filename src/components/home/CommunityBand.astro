@@ -1,0 +1,128 @@
+---
+const PILLARS = [
+  {
+    title: 'Make',
+    text: 'Ruang eksplorasi untuk mencipta sesuatu dengan tangan sendiri, tanpa tekanan.',
+    svg: '<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"/>',
+  },
+  {
+    title: 'Restore',
+    text: 'Ritual mindful untuk memulihkan energi dan menemukan jeda dari keseharian.',
+    svg: '<circle cx="12" cy="12" r="8"/>',
+  },
+  {
+    title: 'Belong',
+    text: 'Komunitas hangat yang menyambut setiap orang apa adanya.',
+    svg: '<path d="M12 3.5 20.5 12 12 20.5 3.5 12Z"/>',
+  },
+];
+const STAR = '<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"/>';
+---
+<section class="community section" id="community">
+  <div class="container community-inner">
+    <svg class="community-star" viewBox="0 0 24 24" width="18" height="18" fill="none"
+      stroke="currentColor" stroke-width="1.2" stroke-linecap="round" aria-hidden="true" set:html={STAR} />
+    <div class="eyebrow">06 / A space to belong</div>
+    <h2 class="heading">A community<br />of <em class="script-cst-color">becoming.</em></h2>
+    <p class="community-lead">
+      We believe beautiful things happen when people gather with intention. Temukan teman baru,
+      berkolaborasi, dan bertumbuh bersama di ruang yang menerima setiap versi dirimu.
+    </p>
+    <div class="pillars">
+      {PILLARS.map((p) => (
+        <div class="pillar">
+          <svg class="pillar-icon" viewBox="0 0 24 24" width="22" height="22" fill="none"
+            stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"
+            aria-hidden="true" set:html={p.svg} />
+          <h3>{p.title}</h3>
+          <p>{p.text}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .community {
+    background: var(--paper);
+    text-align: center;
+  }
+
+  .community-inner {
+    display: grid;
+    width: min(780px, calc(100% - 48px));
+    justify-items: center;
+  }
+
+  .community-star {
+    margin-bottom: 14px;
+    color: var(--clay);
+  }
+
+  .community .heading {
+    margin: 15px 0 22px;
+    font-size: clamp(67px, 8.3vw, 112px);
+  }
+
+  .community-lead {
+    max-width: 540px;
+    margin: 0 auto 28px;
+    color: #77685b;
+    font-size: 14px;
+    line-height: 1.9;
+  }
+
+  .pillars {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+    width: 100%;
+    max-width: 760px;
+    margin-top: var(--space-5);
+    align-items: start;
+  }
+
+  .pillar {
+    display: grid;
+    justify-items: center;
+    align-content: start;
+    gap: 10px;
+  }
+
+  .pillar-icon {
+    color: var(--clay);
+  }
+
+  .pillar h3 {
+    margin: 4px 0;
+    font-family: var(--font-heading);
+    font-size: 27px;
+    font-weight: 600;
+    line-height: normal;
+    color: #2e2924;
+  }
+
+  .pillar p {
+    max-width: 195px;
+    margin: auto;
+    color: #77685b;
+    font-size: 11px;
+    line-height: 1.9;
+  }
+
+  @media (max-width: 740px) {
+    .community-inner {
+      width: 100%;
+    }
+
+    .community .heading {
+      font-size: 70px;
+    }
+
+    .pillars {
+      grid-template-columns: 1fr;
+      gap: var(--space-3);
+      margin-top: var(--space-4);
+    }
+  }
+</style>

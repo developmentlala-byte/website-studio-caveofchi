@@ -1,0 +1,21 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHeader from "@/components/layout/PageHeader.astro";
+import ScheduleCalendar from "@/components/schedule/ScheduleCalendar.astro";
+import { getUpcomingEvents } from "@/lib/events";
+
+const events = await getUpcomingEvents();
+---
+<BaseLayout
+  title="Schedule — Cave of Chi"
+  description="Jadwal workshop dan ritual Cave of Chi."
+>
+  <PageHeader
+    eyebrow="Upcoming gatherings"
+    title="Save your seat."
+    description="Setiap pertemuan dibuat kecil dan personal. Pilih tanggal dan lihat kelas yang bisa kamu ikuti."
+  />
+  <section class="section container">
+    <ScheduleCalendar events={events} />
+  </section>
+</BaseLayout>

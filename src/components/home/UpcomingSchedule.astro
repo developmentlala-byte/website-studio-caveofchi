@@ -1,0 +1,366 @@
+---
+import BookButton from '@/components/booking/BookButton.astro';
+import type { CaveEvent } from '@/lib/events';
+import { formatDayNumber, formatIDR, formatMonthRange, formatSeatsLeft, formatTime, formatWeekday, dayKey } from '@/lib/format';
+
+interface Props { events: CaveEvent[] }
+const { events } = Astro.props;
+type EventSession = CaveEvent['data']['sessions'][number];
+interface Session {
+  time: string;
+  title: string;
+  cave: string;
+  price: string;
+  event: CaveEvent;
+  session: EventSession;
+}
+interface Day { id: string; date: Date; dow: string; day: string; sessions: Session[] }
+
+const grouped = new Map<string, Day>();
+for (const event of events) {
+  const sessions = event.data.sessions.length > 0
+    ? event.data.sessions
+    : [{
+        startsAt: event.data.startsAt,
+        sessionId: event.data.eventId,
+        durationMinutes: event.data.durationMinutes,
+        title: event.data.title,
+        price: event.data.price,
+        capacity: event.data.capacity,
+        seatsLeft: event.data.seatsLeft,
+        space: event.data.space,
+        studioName: event.data.studioName,
+      }];
+
+  for (const session of sessions) {
+    const date = session.startsAt;
+    const key = dayKey(date);
+    let day = grouped.get(key);
+    if (!day) {
+      day = {
+        id: `day-${key}`,
+        date,
+        dow: formatWeekday(date),
+        day: formatDayNumber(date),
+        sessions: [],
+      };
+      grouped.set(key, day);
+    }
+    day.sessions.push({
+      time: `${formatTime(date)} WIB`,
+      title: event.data.title,
+      cave: session.studioName,
+      price: formatIDR(session.price),
+      event,
+      session,
+    });
+  }
+}
+
+const DAYS = [...grouped.values()];
+const monthRange = DAYS.length > 0
+  ? formatMonthRange(DAYS[0].date, DAYS[DAYS.length - 1].date)
+  : 'Jadwal mendatang';
+---
+<section class="schedule section" id="schedule">
+  <div class="container schedule-inner">
+    <div class="schedule-copy">
+      <div class="eyebrow">04 / Upcoming gatherings</div>
+      <h2 class="heading">Save your<br /><em class="script">seat.</em></h2>
+      <p>
+        Setiap pertemuan dibuat kecil dan personal. Pilih tanggal yang sesuai, lalu kelas yang
+        ingin kamu coba.
+      </p>
+      <span class="tag"><span class="dot"></span> Kapasitas mengikuti ketersediaan setiap sesi</span>
+    </div>
+
+    <div class="calendar" data-calendar>
+      <div class="calendar-head">
+        <h3>{monthRange}</h3>
+        <span>Jadwal API</span>
+      </div>
+
+      {DAYS.length > 0 ? (
+        <>
+          <div class="calendar-days" role="tablist" aria-label="Pilih tanggal">
+            {DAYS.map((d, i) => (
+              <button
+                type="button"
+                role="tab"
+                class="day"
+                id={`tab-${d.id}`}
+                aria-controls={`panel-${d.id}`}
+                aria-selected={i === 0 ? 'true' : 'false'}
+                tabindex={i === 0 ? 0 : -1}
+              >
+                <small>{d.dow}</small>
+                <strong>{d.day}</strong>
+              </button>
+            ))}
+          </div>
+
+          {DAYS.map((d, i) => (
+            <div
+              role="tabpanel"
+              class="sessions"
+              id={`panel-${d.id}`}
+              aria-labelledby={`tab-${d.id}`}
+              hidden={i !== 0}
+            >
+              {d.sessions.map((s) => (
+                <div class="session">
+                  <span class="time">{s.time}</span>
+                  <div class="info">
+                    <strong>{s.title}</strong>
+                    <small>{s.cave} · {s.price} · <span data-seats-left={s.session.sessionId}>{formatSeatsLeft(s.session.seatsLeft)}</span></small>
+                  </div>
+                  <BookButton event={s.event} session={s.session} variant="outline">Book ↗</BookButton>
+                </div>
+              ))}
+            </div>
+          ))}
+        </>
+      ) : (
+        <p class="empty">Belum ada sesi publik mendatang dari sistem.</p>
+      )}
+    </div>
+  </div>
+</section>
+
+<style>
+  .schedule {
+    background: #ede5db;
+  }
+
+  .schedule-inner {
+    display: grid;
+    grid-template-columns: 0.8fr 1.2fr;
+    gap: var(--space-5);
+    align-items: center;
+  }
+
+  .schedule-copy .eyebrow {
+    margin-bottom: 18px;
+  }
+
+  .schedule-copy .heading {
+    margin: 18px 0 22px;
+    font-size: clamp(66px, 7vw, 91px);
+  }
+
+  .schedule-copy p {
+    max-width: 320px;
+    margin: 13px 0;
+    color: #6a5a50;
+    font-size: 13px;
+    line-height: 1.95;
+  }
+
+  .calendar {
+    padding: 30px;
+    border-radius: var(--radius-md);
+    background: var(--paper-light);
+    box-shadow: var(--shadow-card);
+  }
+
+  .calendar-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+
+  .calendar-head h3 {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: 27px;
+    font-weight: 600;
+    font-variant-numeric: lining-nums;
+    line-height: normal;
+    letter-spacing: normal;
+    color: #2e2924;
+  }
+
+  .calendar-head span {
+    color: var(--ink-soft);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-label);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+  }
+
+  .calendar-days {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+
+  .day {
+    display: grid;
+    min-width: 60px;
+    gap: 6px;
+    padding: 11px 8px 10px;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--umber) 28%, transparent);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--umber);
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: background 200ms ease, color 200ms ease, border-color 200ms ease;
+  }
+
+  .day small {
+    color: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-label);
+    letter-spacing: var(--track-label);
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .day strong {
+    font-family: var(--font-heading);
+    font-size: var(--fs-title);
+    font-weight: var(--fw-title);
+    font-variant-numeric: lining-nums;
+    line-height: 1;
+  }
+
+  .day:hover {
+    border-color: var(--clay);
+  }
+
+  .day[aria-selected="true"] {
+    border-color: var(--clay);
+    background: var(--clay);
+    color: var(--paper-light);
+  }
+
+  .day[aria-selected="true"] small {
+    color: var(--paper-light);
+  }
+
+  .day:focus-visible,
+  .book:focus-visible {
+    outline: 2px solid var(--clay);
+    outline-offset: 2px;
+  }
+
+  .session {
+    display: grid;
+    grid-template-columns: 92px 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 18px 0;
+    border-top: 1px solid color-mix(in srgb, var(--umber) 18%, transparent);
+  }
+
+  .time {
+    color: var(--ink-soft);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-label);
+    letter-spacing: var(--track-ui);
+    text-transform: uppercase;
+  }
+
+  .info {
+    display: grid;
+    gap: 5px;
+  }
+
+  .info strong {
+    font-family: var(--font-heading);
+    font-size: var(--fs-title-sm);
+    font-weight: var(--fw-title);
+    font-variant-numeric: lining-nums;
+    line-height: 1.2;
+    color: var(--umber);
+  }
+
+  .info small {
+    color: var(--ink-soft);
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-ui);
+  }
+
+  .book {
+    padding: 9px 15px;
+    border: 1px solid var(--umber);
+    border-radius: var(--radius-sm);
+    color: var(--umber);
+    font-size: var(--fs-label);
+    font-weight: var(--fw-label);
+    letter-spacing: var(--track-ui);
+    text-transform: uppercase;
+    transition: background 200ms ease, color 200ms ease;
+  }
+
+  .book:hover {
+    background: var(--umber);
+    color: var(--paper-light);
+  }
+
+  .empty {
+    margin: 0;
+    padding: 20px 0 4px;
+    border-top: 1px solid color-mix(in srgb, var(--umber) 18%, transparent);
+    color: var(--ink-soft);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-ui);
+  }
+
+  @media (max-width: 740px) {
+    .schedule-inner {
+      grid-template-columns: 1fr;
+      gap: var(--space-3);
+    }
+
+    .calendar {
+      padding: 20px;
+    }
+
+    .session {
+      grid-template-columns: 1fr auto;
+    }
+
+    .time {
+      grid-column: 1 / -1;
+    }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-calendar]').forEach((cal) => {
+    const tabs = Array.from(cal.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    const panels = Array.from(cal.querySelectorAll<HTMLElement>('[role="tabpanel"]'));
+
+    const select = (tab: HTMLButtonElement, focus = false) => {
+      tabs.forEach((t) => {
+        const active = t === tab;
+        t.setAttribute('aria-selected', active ? 'true' : 'false');
+        t.tabIndex = active ? 0 : -1;
+      });
+      panels.forEach((p) => {
+        p.hidden = p.id !== tab.getAttribute('aria-controls');
+      });
+      if (focus) tab.focus();
+    };
+
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => select(tab));
+      tab.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          select(tabs[(i + 1) % tabs.length], true);
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          select(tabs[(i - 1 + tabs.length) % tabs.length], true);
+        }
+      });
+    });
+  });
+</script>

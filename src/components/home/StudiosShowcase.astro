@@ -1,0 +1,190 @@
+---
+// StudiosShowcase.astro
+import type { PublicStudio } from '@/lib/api/studios';
+
+interface Props { studios: PublicStudio[] }
+const { studios } = Astro.props;
+const showcaseStudios = studios.map((studio) => {
+  return {
+    ...studio,
+    ribbon: studio.code,
+    eyebrow: `Kapasitas ${studio.maxCapacity} orang`,
+    alt: `Interior ${studio.name}`,
+    text: studio.shortDescription || studio.description || '',
+  };
+});
+const studioCount = showcaseStudios.length;
+
+// Angka → kata untuk heading (2 → "Two", 4 → "Four"). Di atas 10 pakai angka biasa.
+const NUMBER_WORDS = [
+  'Zero', 'One', 'Two', 'Three', 'Four', 'Five',
+  'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+];
+const studioCountWord = NUMBER_WORDS[studioCount] ?? String(studioCount);
+---
+<section class="studios" id="spaces">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">{String(studioCount).padStart(2, '0')} / Meet our {studioCount === 1 ? 'space' : 'spaces'}</div>
+        <h2 class="heading">{studioCountWord} {studioCount === 1 ? 'cave' : 'caves'}.<br /><em class="script">{studioCountWord} energies.</em></h2>
+      </div>
+      <p>
+        {studioCount === 1
+          ? 'Satu ruang intim untuk hadir, berkarya, dan terhubung sepenuhnya.'
+          : 'Setiap ruang punya karakter berbeda, dengan niat yang sama: menciptakan tempat untuk hadir seutuhnya.'}
+      </p>
+    </div>
+    <div class="studio-grid">
+      {showcaseStudios.map((s) => (
+        <article class="studio-card">
+          {s.coverImageUrl
+            && <img src={s.coverImageUrl} alt={s.alt} width="960" height="640" loading="lazy" />}
+          <div class="studio-ribbon">{s.ribbon}</div>
+          <div class="studio-card-content">
+            <div>
+              <div class="eyebrow">{s.eyebrow}</div>
+              <h3><a href={`/studios/${s.slug}`}>{s.name}</a></h3>
+              <p>{s.text}</p>
+            </div>
+            <a class="circle-arrow" href={`/studios/${s.slug}`} aria-label={`Lihat detail ${s.name}`}>↗</a>
+          </div>
+        </article>
+      ))}
+    </div>
+    {studioCount === 0 && <p class="empty-studios">Studio belum tersedia saat ini.</p>}
+  </div>
+</section>
+<style>
+  .studios {
+    padding-block: var(--space-6);
+    background: #e9dfd2;
+  }
+
+  .studio-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+  }
+
+  .studio-card {
+    position: relative;
+    min-height: 510px;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background: var(--sand);
+    color: #fff;
+  }
+
+  .studio-card :global(img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 500ms ease;
+  }
+
+  .studio-card:hover :global(img) {
+    transform: scale(1.025);
+  }
+
+  .studio-card::after {
+    position: absolute;
+    inset: 35% 0 0;
+    background: linear-gradient(transparent, var(--umber-overlay-strong));
+    content: "";
+  }
+
+  .studio-ribbon,
+  .studio-card-content {
+    position: absolute;
+    z-index: 1;
+  }
+
+  .studio-ribbon {
+    top: 18px;
+    left: 18px;
+    padding: 8px 10px;
+    border: 1px solid var(--paper-outline);
+    border-radius: 99px;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .studio-card-content {
+    right: 22px;
+    bottom: 22px;
+    left: 22px;
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .studio-card-content .eyebrow {
+    color: #f3e9dd;
+  }
+
+  .studio-card-content h3 {
+    margin: 9px 0 8px;
+    font-family: var(--font-heading);
+    font-size: 72px;
+    font-weight: 500;
+    line-height: 0.9;
+    letter-spacing: -0.05em;
+  }
+
+  .studio-card-content h3 a {
+    color: inherit;
+  }
+
+  .studio-card-content p {
+    max-width: 310px;
+    margin: 12px 0;
+    color: #eee1d4;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
+  .circle-arrow {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid var(--paper-outline-strong);
+    border-radius: 50%;
+    font-size: 20px;
+  }
+
+  @media (max-width: 740px) {
+    .studios {
+      padding-block: var(--space-5);
+    }
+
+    .studio-grid {
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+
+    .studio-card {
+      min-height: 420px;
+    }
+
+    .studio-card-content h3 {
+      font-size: 63px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .studio-card :global(img) {
+      transition: none;
+    }
+
+    .studio-card:hover :global(img) {
+      transform: none;
+    }
+  }
+</style>

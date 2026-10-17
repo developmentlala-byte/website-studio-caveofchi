@@ -1,0 +1,114 @@
+/* Import SETELAH global.css */
+
+:root {
+  --font-heading: "Cormorant Garamond", Georgia, serif;
+  --font-body: "DM Sans", Arial, sans-serif;
+
+  /* weight */
+  --fw-display: 500; /* h1, h2, italic aksen */
+  --fw-title: 600; /* judul kecil < 40px */
+  --fw-body: 400;
+  --fw-ui: 500;
+  --fw-label: 600;
+  --fw-eyebrow: 700;
+
+  /* skala sans */
+  --fs-label: 10px;
+  --fs-sm: 12px;
+  --fs-body: 14px;
+  --fs-lead: 15px;
+
+  /* skala serif */
+  --fs-title-sm: 20px;
+  --fs-title: 24px;
+  /* 102px tercapai di layar ≥ ~1437px, lalu mengecil mengikuti lebar layar */
+  --fs-h2: clamp(44px, 7.1vw, 102px);
+
+  --track-label: 0.14em;
+  --track-ui: 0.1em;
+  --track-eyebrow: 0.23em; /* 2.3px pada 10px */
+  --track-heading: -0.055em; /* -5.61px pada 102px */
+  --lh-body: 1.9;
+  --lh-heading: 0.97;
+}
+
+html {
+  /* jangan pernah bikin bold/italic palsu */
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-optical-sizing: auto;
+}
+
+body {
+  font-family: var(--font-body);
+  font-weight: var(--fw-body);
+}
+
+/* button/input tidak mewarisi font secara default */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+.heading {
+  font-family: var(--font-heading);
+  font-variant-numeric: lining-nums;
+  font-feature-settings:
+    "lnum" 1,
+    "kern" 1;
+  text-wrap: balance;
+}
+
+/* Heading: Cormorant Garamond 102px / 500 / 99px / -5.61px */
+.heading {
+  font-weight: 500;
+  line-height: var(--lh-heading);
+  letter-spacing: var(--track-heading);
+}
+
+h3,
+h4 {
+  font-weight: var(--fw-title);
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+/* aksen italic: selalu 500, sama dengan heading */
+.script,
+h1 em,
+h2 em {
+  font-style: italic;
+  font-weight: var(--fw-display);
+}
+
+/* Eyebrow: DM Sans 10px / 700 / tracking 2.3px */
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-eyebrow);
+  letter-spacing: var(--track-eyebrow);
+  line-height: 1.6;
+  text-transform: uppercase;
+}
+
+.tag {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  line-height: normal;
+  text-transform: uppercase;
+}
+
+p {
+  text-wrap: pretty;
+}

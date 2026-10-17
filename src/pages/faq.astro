@@ -1,0 +1,18 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import FaqList from "@/components/faq/FaqList.astro";
+import PageHeader from "@/components/layout/PageHeader.astro";
+---
+<BaseLayout
+  title="FAQ — Cave of Chi"
+  description="Jawaban atas pertanyaan umum tentang pengalaman dan reservasi di Cave of Chi."
+>
+  <PageHeader
+    eyebrow="A few helpful things"
+    title="Frequently asked."
+    description="Informasi praktis sebelum kamu datang dan menikmati pengalaman di Cave of Chi."
+  />
+  <section class="section container">
+    <FaqList />
+  </section>
+</BaseLayout>

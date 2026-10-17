@@ -1,0 +1,787 @@
+---
+---
+<dialog id="booking-dialog" aria-labelledby="booking-title" aria-describedby="booking-description">
+  <div class="modal">
+    <header class="modal-header">
+      <div>
+        <span class="eyebrow">Cave of Chi / Booking</span>
+        <h2 id="booking-title" data-bind="heading">Booking baru</h2>
+        <p id="booking-description" data-bind="description">
+          Pilih event dan sesi, lalu isi data pemesan.
+        </p>
+      </div>
+      <button type="button" class="close-modal" data-close aria-label="Tutup booking">×</button>
+    </header>
+
+    <ol class="stepper" aria-label="Langkah booking">
+      <li class="active" data-step-indicator="1"><span>1</span><b>Sesi & data</b></li>
+      <li data-step-indicator="2"><span>2</span><b>Konfirmasi</b></li>
+      <li data-step-indicator="3"><span>3</span><b>Selesai</b></li>
+    </ol>
+
+    <form data-form>
+      <section class="step-content" data-step-panel="1">
+        <div class="selection-column">
+          <div class="field">
+            <label for="bk-event-search">Event</label>
+            <input
+              id="bk-event-search"
+              type="search"
+              autocomplete="off"
+              placeholder="Cari nama event"
+              aria-label="Cari event"
+              data-event-search
+            />
+          </div>
+          <div class="choice-list event-list" role="listbox" aria-label="Event" data-events></div>
+          <p class="load-message" role="status" data-events-status>Memuat event...</p>
+          <button type="button" class="retry-button" data-retry hidden>Coba lagi</button>
+
+          <div class="field">
+            <div class="session-heading">
+              <span class="label">Sesi</span>
+              <span class="micro" data-session-count></span>
+            </div>
+            <div class="choice-list session-list" role="listbox" aria-label="Sesi" data-sessions></div>
+          </div>
+        </div>
+
+        <aside class="customer-column">
+          <h3>Data pemesan</h3>
+          <div class="field">
+            <label for="bk-name">Nama customer</label>
+            <input
+              id="bk-name"
+              name="name"
+              type="text"
+              autocomplete="name"
+              placeholder="Nama lengkap"
+              required
+              maxlength="150"
+            />
+          </div>
+          <div class="field">
+            <label for="bk-email">Email</label>
+            <input
+              id="bk-email"
+              name="email"
+              type="email"
+              autocomplete="email"
+              placeholder="nama@email.com"
+              required
+              maxlength="254"
+            />
+          </div>
+          <div class="field">
+            <label for="bk-phone">Nomor telepon</label>
+            <input
+              id="bk-phone"
+              name="phone"
+              type="tel"
+              inputmode="tel"
+              autocomplete="tel"
+              placeholder="081234567890"
+              required
+              maxlength="30"
+            />
+          </div>
+
+          <div class="field">
+            <label for="bk-qty">Jumlah slot</label>
+            <div class="qty-control">
+              <button type="button" data-step="-1" aria-label="Kurangi slot">−</button>
+              <input id="bk-qty" name="quantity" type="number" min="1" max="20" value="1" />
+              <button type="button" data-step="1" aria-label="Tambah slot">+</button>
+            </div>
+            <span class="micro" data-max-quantity></span>
+          </div>
+
+          <dl class="price-summary">
+            <div><dt>Pembayaran</dt><dd>Midtrans</dd></div>
+            <div><dt>Harga / slot</dt><dd data-bind="unit-price">–</dd></div>
+            <div class="total"><dt>Total</dt><dd data-bind="total">–</dd></div>
+          </dl>
+        </aside>
+      </section>
+
+      <section class="step-content confirmation" data-step-panel="2" hidden>
+        <div class="confirm-section">
+          <h3>Event & sesi</h3>
+          <dl>
+            <div><dt>Event</dt><dd data-bind="event-name"></dd></div>
+            <div><dt>Studio</dt><dd data-bind="studio-name"></dd></div>
+            <div><dt>Tanggal</dt><dd data-bind="session-date"></dd></div>
+            <div><dt>Waktu</dt><dd data-bind="session-time"></dd></div>
+          </dl>
+        </div>
+        <div class="confirm-section">
+          <h3>Pemesan</h3>
+          <dl>
+            <div><dt>Nama</dt><dd data-bind="customer-name"></dd></div>
+            <div><dt>Email</dt><dd data-bind="customer-email"></dd></div>
+            <div><dt>Telepon</dt><dd data-bind="customer-phone"></dd></div>
+          </dl>
+        </div>
+        <div class="confirm-section">
+          <h3>Pembayaran</h3>
+          <dl>
+            <div><dt>Jumlah slot</dt><dd data-bind="quantity"></dd></div>
+            <div><dt>Harga / slot</dt><dd data-bind="confirm-unit-price"></dd></div>
+            <div class="total"><dt>Total</dt><dd data-bind="confirm-total"></dd></div>
+          </dl>
+          <p class="payment-note">
+            Slot ditahan sementara selama proses pembayaran. Pembayaran diverifikasi otomatis oleh Midtrans.
+          </p>
+        </div>
+      </section>
+
+      <section class="success-panel" data-step-panel="3" hidden>
+        <div class="success-icon" aria-hidden="true">✓</div>
+        <p class="eyebrow">Booking berhasil dibuat</p>
+        <p class="micro">Kode booking</p>
+        <strong class="booking-code" data-bind="booking-code"></strong>
+        <span class="booking-status" data-bind="payment-status"></span>
+        <p class="success-total">Total <strong data-bind="success-total"></strong></p>
+        <p class="hold-message" data-bind="hold-message"></p>
+        <a class="payment-link" data-payment-link target="_blank" rel="noopener noreferrer">
+          Buka halaman pembayaran ↗
+        </a>
+      </section>
+
+      <p class="form-error" role="alert" data-error hidden></p>
+    </form>
+
+    <footer class="modal-footer">
+      <div class="footer-total">
+        <span>Total</span>
+        <strong data-bind="footer-total">Pilih sesi untuk melihat total.</strong>
+      </div>
+      <div class="footer-actions">
+        <button type="button" class="secondary-button" data-action="cancel">Batal</button>
+        <button type="button" class="secondary-button" data-action="back" hidden>Ubah sesi</button>
+        <button type="button" class="primary-button" data-action="next" disabled>Lanjut</button>
+        <button type="button" class="primary-button" data-action="confirm" hidden>
+          Konfirmasi booking
+        </button>
+        <button type="button" class="primary-button" data-action="done" hidden>Selesai</button>
+      </div>
+    </footer>
+  </div>
+</dialog>
+
+<style>
+  dialog {
+    width: min(960px, calc(100% - 24px));
+    max-width: 960px;
+    max-height: min(92dvh, 900px);
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: var(--paper-light);
+    color: var(--ink);
+    box-shadow: var(--shadow-card);
+  }
+
+  dialog::backdrop {
+    background: var(--umber-backdrop);
+    backdrop-filter: blur(5px);
+  }
+
+  .modal {
+    display: flex;
+    max-height: min(92dvh, 900px);
+    flex-direction: column;
+  }
+
+  .modal-header {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: start;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 22px 28px 18px;
+    background: var(--umber);
+    color: var(--paper-light);
+  }
+
+  .eyebrow {
+    color: var(--sand);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .modal-header h2 {
+    margin: 6px 0 4px;
+    font-family: var(--font-heading);
+    font-size: 34px;
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .modal-header p {
+    margin: 0;
+    color: var(--paper-outline-subtle);
+    font-size: 11px;
+  }
+
+  .close-modal {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 auto;
+    border: 1px solid var(--paper-outline-subtle);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--paper-light);
+    cursor: pointer;
+    font-size: 21px;
+  }
+
+  .stepper {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    padding: 15px 28px;
+    border-bottom: 1px solid var(--line);
+    list-style: none;
+  }
+
+  .stepper li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .stepper li::after {
+    width: clamp(18px, 6vw, 70px);
+    height: 1px;
+    margin-left: 4px;
+    background: var(--line);
+    content: "";
+  }
+
+  .stepper li:last-child::after {
+    display: none;
+  }
+
+  .stepper li > span {
+    display: grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--line);
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  .stepper li.active,
+  .stepper li.complete {
+    color: var(--umber);
+    font-weight: 600;
+  }
+
+  .stepper li.active > span,
+  .stepper li.complete > span {
+    background: var(--umber);
+    color: var(--paper-light);
+  }
+
+  form {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .step-content {
+    display: grid;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) minmax(250px, 310px);
+  }
+
+  .selection-column,
+  .customer-column {
+    display: grid;
+    align-content: start;
+    gap: 18px;
+    padding: 22px 28px;
+  }
+
+  .customer-column {
+    border-left: 1px solid var(--line);
+    background: color-mix(in srgb, var(--sand) 22%, transparent);
+  }
+
+  .customer-column h3,
+  .confirm-section h3 {
+    margin: 0;
+    color: var(--umber);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .field {
+    display: grid;
+    min-width: 0;
+    gap: 7px;
+  }
+
+  .field label,
+  .field .label {
+    color: var(--umber);
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  .field input {
+    width: 100%;
+    min-height: 40px;
+    padding: 9px 11px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    color: var(--ink);
+    font-size: 12px;
+  }
+
+  .choice-list {
+    display: grid;
+    gap: 7px;
+  }
+
+  .event-list {
+    max-height: 138px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: auto;
+  }
+
+  :global(.choice-card) {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--paper-light);
+    color: var(--umber);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 180ms ease, background 180ms ease;
+  }
+
+  :global(.choice-card:hover:not(:disabled)) {
+    background: color-mix(in srgb, var(--sand) 28%, var(--paper-light));
+  }
+
+  :global(.choice-card[aria-selected="true"]) {
+    border-color: var(--umber);
+    background: color-mix(in srgb, var(--sand) 35%, var(--paper-light));
+  }
+
+  :global(.choice-card:disabled) {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  :global(.event-choice) {
+    min-height: 48px;
+    font-size: 11px;
+  }
+
+
+
+  .session-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: 230px;
+    overflow-y: auto;
+  }
+
+  :global(.session-choice) {
+    min-height: 92px;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 7px;
+    font-size: 10px;
+  }
+
+  :global(.session-choice strong) {
+    color: var(--umber);
+    font-size: 11px;
+  }
+
+  :global(.session-choice .session-meta) {
+    color: var(--muted);
+    line-height: 1.45;
+  }
+
+  :global(.session-choice .session-bottom) {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 6px;
+    border-top: 1px solid var(--line);
+  }
+
+  :global(.session-choice .sold-out) {
+    color: var(--clay);
+  }
+
+  .session-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .micro,
+  .load-message {
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  .load-message {
+    margin: 0;
+  }
+
+  .retry-button {
+    width: fit-content;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--umber);
+    cursor: pointer;
+    font-size: 11px;
+    text-decoration: underline;
+  }
+
+  .qty-control {
+    display: flex;
+    width: fit-content;
+    min-height: 38px;
+    align-items: center;
+    gap: 8px;
+    padding: 3px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+  }
+
+  .qty-control button {
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: var(--sand);
+    color: var(--umber);
+    cursor: pointer;
+  }
+
+  .qty-control input {
+    width: 38px;
+    min-height: 30px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    text-align: center;
+  }
+
+  .price-summary,
+  .confirm-section dl {
+    display: grid;
+    gap: 9px;
+    margin: 0;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--paper-light);
+    font-size: 10px;
+  }
+
+  .price-summary div,
+  .confirm-section dl div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  dt {
+    color: var(--muted);
+  }
+
+  dd {
+    margin: 0;
+    color: var(--umber);
+    text-align: right;
+  }
+
+  .total {
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+    color: var(--umber);
+    font-weight: 600;
+  }
+
+  .confirmation {
+    width: min(100%, 600px);
+    margin: 0 auto;
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 24px 28px;
+  }
+
+  .confirm-section {
+    display: grid;
+    gap: 9px;
+  }
+
+  .payment-note {
+    margin: 10px 0 0;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--sand) 35%, transparent);
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.5;
+  }
+
+  .success-panel {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    padding: 38px 24px;
+    text-align: center;
+  }
+
+  .success-icon {
+    display: grid;
+    width: 46px;
+    height: 46px;
+    place-items: center;
+    border-radius: 50%;
+    background: #e4eee2;
+    color: #365b3b;
+    font-size: 24px;
+  }
+
+  .success-panel .eyebrow,
+  .success-panel .micro,
+  .success-total,
+  .hold-message {
+    margin: 0;
+  }
+
+  .success-panel .eyebrow {
+    color: var(--umber);
+    font-weight: 600;
+  }
+
+  .booking-code {
+    color: var(--umber);
+    font-family: monospace;
+    font-size: 25px;
+    letter-spacing: 0.07em;
+  }
+
+  .booking-status {
+    padding: 5px 10px;
+    border-radius: 99px;
+    background: #f5edda;
+    color: #705721;
+    font-size: 10px;
+  }
+
+  .success-total,
+  .hold-message {
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .success-total strong {
+    color: var(--umber);
+  }
+
+  .payment-link {
+    display: inline-flex;
+    min-height: 42px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 8px;
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    background: var(--umber);
+    color: var(--paper-light);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .form-error {
+    margin: 0 28px 16px;
+    color: var(--clay);
+    font-size: 11px;
+  }
+
+  .modal-footer {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 13px 28px;
+    border-top: 1px solid var(--line);
+    background: var(--paper-light);
+  }
+
+  .footer-total {
+    display: grid;
+    gap: 3px;
+    color: var(--muted);
+    font-size: 9px;
+  }
+
+  .footer-total strong {
+    color: var(--umber);
+    font-size: 13px;
+  }
+
+  .footer-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .primary-button,
+  .secondary-button {
+    min-height: 38px;
+    padding: 9px 13px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 10px;
+  }
+
+  .primary-button {
+    background: var(--umber);
+    color: var(--paper-light);
+  }
+
+  .primary-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  .secondary-button {
+    border-color: var(--line);
+    background: transparent;
+    color: var(--umber);
+  }
+
+  .primary-button[aria-busy="true"] {
+    cursor: wait;
+    opacity: 0.65;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  @media (max-width: 680px) {
+    dialog {
+      width: calc(100% - 16px);
+      max-height: 94dvh;
+      border-radius: var(--radius-sm);
+    }
+
+    .modal {
+      max-height: 94dvh;
+    }
+
+    .modal-header {
+      padding: 18px;
+    }
+
+    .modal-header h2 {
+      font-size: 29px;
+    }
+
+    .stepper {
+      justify-content: space-between;
+      gap: 4px;
+      padding: 12px 18px;
+    }
+
+    .stepper li {
+      gap: 5px;
+      font-size: 9px;
+    }
+
+    .stepper li::after {
+      width: clamp(5px, 4vw, 22px);
+      margin-left: 1px;
+    }
+
+    .stepper li > span {
+      width: 21px;
+      height: 21px;
+    }
+
+    .step-content {
+      grid-template-columns: 1fr;
+    }
+
+    .selection-column,
+    .customer-column {
+      padding: 18px;
+    }
+
+    .customer-column {
+      border-top: 1px solid var(--line);
+      border-left: 0;
+    }
+
+    .confirmation {
+      padding: 20px 18px;
+    }
+
+    .modal-footer {
+      align-items: stretch;
+      padding: 12px 18px;
+    }
+
+    .footer-total {
+      align-self: center;
+    }
+
+    .footer-actions {
+      justify-content: flex-end;
+    }
+
+    .primary-button,
+    .secondary-button {
+      padding: 8px 10px;
+      font-size: 9px;
+    }
+  }
+
+  @media (max-width: 390px) {
+    .event-list,
+    .session-list {
+      grid-template-columns: 1fr;
+    }
+
+    .footer-total {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  import '@/scripts/booking-modal';
+</script>

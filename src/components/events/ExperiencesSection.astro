@@ -1,0 +1,41 @@
+---
+import EventBrowser from '@/components/events/EventBrowser.astro';
+import type { CaveEvent } from '@/lib/events';
+import type { PublicStudio } from '@/lib/api/studios';
+interface Props {
+  events: CaveEvent[];
+  studios: PublicStudio[];
+  showAllLink?: boolean;
+  showIntro?: boolean;
+}
+const { events, studios, showAllLink = false, showIntro = true } = Astro.props;
+---
+<section class="section experiences" id="experiences">
+  <div class="container">
+    <!-- <div class="eyebrow">03 / Curated for curious souls</div> -->
+    <!-- <div class="section-head">
+      <div>
+        <h2 class="heading">Find your <em class="script">ritual.</em></h2>
+        <p>Pilih sesuatu yang ingin kamu coba. Tak perlu punya pengalaman sebelumnya.</p>
+      </div>
+      <span class="tag"><span class="dot"></span> All workshops are beginner friendly</span>
+    </div> -->
+    <EventBrowser events={events} studios={studios} showIntro={showIntro} />
+    {showAllLink && <a class="see-all" href="/experiences">Lihat semua experiences →</a>}
+  </div>
+</section>
+<style>
+  .experiences {
+    background: #fcfaf6;
+    padding-bottom: var(--space-6);
+  }
+
+  .see-all {
+    display: inline-block;
+    margin-top: 28px;
+    color: var(--umber);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+</style>

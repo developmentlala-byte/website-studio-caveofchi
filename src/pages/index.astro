@@ -1,0 +1,33 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import CommunityBand from "@/components/home/CommunityBand.astro";
+import FaqSection from "@/components/home/FaqSection.astro";
+import Hero from "@/components/home/Hero.astro";
+import Intro from "@/components/home/Intro.astro";
+import RitualBand from "@/components/home/RitualBand.astro";
+import StudiosShowcase from "@/components/home/StudiosShowcase.astro";
+import UpcomingSchedule from "@/components/home/UpcomingSchedule.astro";
+import ExperiencesSection from "@/components/events/ExperiencesSection.astro";
+import { getUpcomingEvents } from "@/lib/events";
+import { fetchStudios } from "@/lib/api/studios";
+import { SITE } from "@/lib/site";
+
+const [events, studios] = await Promise.all([
+  getUpcomingEvents(),
+  fetchStudios(),
+]);
+---
+<BaseLayout
+  title="Cave of Chi — Art. Space. Energy."
+  description={SITE.description}
+  headerVariant="overlay"
+>
+  <Hero studios={studios} />
+  <Intro />
+  <StudiosShowcase studios={studios} />
+  <ExperiencesSection events={events} studios={studios} showAllLink />
+  <UpcomingSchedule events={events} />
+  <RitualBand />
+  <CommunityBand />
+  <FaqSection />
+</BaseLayout>

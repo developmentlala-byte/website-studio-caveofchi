@@ -1,0 +1,342 @@
+---
+import EventCard from '@/components/events/EventCard.astro';
+import type { CaveEvent } from '@/lib/events';
+import type { PublicStudio } from '@/lib/api/studios';
+
+interface Props { events: CaveEvent[]; studios: PublicStudio[]; showIntro?: boolean }
+const { events, studios, showIntro = true } = Astro.props;
+---
+<div data-event-browser>
+  {showIntro && (
+    <div class="section-head event-head">
+      <div class="event-head-main">
+        <div class="eyebrow">03 / Curated for curious souls</div>
+        <h2 class="heading">Find your <em class="script">ritual.</em></h2>
+        <p class="head-lead">
+          Pilih sesuatu yang ingin kamu coba. Tak perlu punya pengalaman sebelumnya.
+        </p>
+      </div>
+      <div class="head-badge">
+        <span class="head-badge-dot" aria-hidden="true"></span>
+        All workshops are beginner friendly
+      </div>
+    </div>
+  )}
+  {events.length > 0 && studios.length > 0 && (
+    <div class="filter-row studio-filter-row" role="group" aria-label="Filter studio">
+      <button type="button" class="filter active" data-studio-filter="all" aria-pressed="true">Semua studio</button>
+      {studios.map((studio) => (
+        <button type="button" class="filter" data-studio-filter={studio.slug} aria-pressed="false">
+          {studio.name}
+        </button>
+      ))}
+    </div>
+  )}
+  <div class="event-grid">
+    {events.map((event) => <EventCard event={event} />)}
+  </div>
+  <p class="empty-state" data-empty hidden={events.length > 0}>
+    Belum ada event publik mendatang dari sistem.
+  </p>
+</div>
+
+<style>
+  /* ---------- Header: eyebrow + heading + lead (kiri), badge (kanan) ---------- */
+  .event-head {
+    align-items: flex-end;
+  }
+
+  .event-head .eyebrow {
+    margin-bottom: 18px;
+  }
+
+  .event-head .heading {
+    margin: 0;
+  }
+
+  .event-head .head-lead {
+    max-width: 300px;
+    margin: 18px 0 0;
+    color: var(--umber);
+    font-size: 13px;
+    line-height: 1.75;
+  }
+
+  .head-badge {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 18px;
+    border: 1px solid var(--line);
+    border-radius: 99px;
+    color: var(--umber);
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    line-height: 1.4;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .head-badge-dot {
+    width: 7px;
+    height: 7px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: #c4a88a;
+  }
+
+  /* ---------- Filter ---------- */
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: var(--space-3);
+  }
+
+  .filter {
+    padding: 10px 13px;
+    border: 1px solid var(--line);
+    border-radius: 99px;
+    background: transparent;
+    color: #6b6055;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: normal;
+  }
+
+  .filter.active {
+    border-color: var(--umber);
+    background: var(--umber);
+    color: #fff;
+  }
+
+  .studio-filter-row {
+    margin-top: calc(var(--space-3) * -1);
+  }
+
+  .event-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .empty-state {
+    padding: var(--space-4);
+    color: var(--muted);
+    text-align: center;
+  }
+
+  @media (max-width: 900px) {
+    .event-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 740px) {
+    .event-head {
+      align-items: flex-start;
+    }
+
+    .head-badge {
+      white-space: normal;
+    }
+  }
+
+  @media (max-width: 620px) {
+    .event-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .filter-row {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding: 2px 2px 8px;
+    }
+
+    .filter {
+      flex: 0 0 auto;
+    }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-event-browser]').forEach((root) => {
+    const studioButtons = root.querySelectorAll<HTMLButtonElement>('[data-studio-filter]');
+    const cards = root.querySelectorAll<HTMLElement>('[data-event-card]');
+    const empty = root.querySelector<HTMLElement>('[data-empty]');
+    let selectedStudio = 'all';
+
+    type CardSession = {
+      sessionId: string;
+      startsAt: string;
+      durationMinutes: number;
+      price: number;
+      seatsLeft: number;
+      studioSlug: string;
+      studioName: string;
+    };
+
+    const isCardSession = (value: unknown): value is CardSession =>
+      typeof value === 'object' &&
+      value !== null &&
+      'sessionId' in value &&
+      typeof value.sessionId === 'string' &&
+      'startsAt' in value &&
+      typeof value.startsAt === 'string' &&
+      Number.isFinite(Date.parse(value.startsAt)) &&
+      'durationMinutes' in value &&
+      typeof value.durationMinutes === 'number' &&
+      'price' in value &&
+      typeof value.price === 'number' &&
+      'seatsLeft' in value &&
+      typeof value.seatsLeft === 'number' &&
+      'studioSlug' in value &&
+      typeof value.studioSlug === 'string' &&
+      'studioName' in value &&
+      typeof value.studioName === 'string';
+
+    const readSessions = (card: HTMLElement): CardSession[] => {
+      try {
+        const value: unknown = JSON.parse(card.dataset.sessions ?? '[]');
+        if (!Array.isArray(value) || !value.every(isCardSession)) {
+          throw new Error('Sesi event harus berupa array dengan format yang valid.');
+        }
+        return value;
+      } catch (error) {
+        console.error('[events] Gagal membaca data sesi kartu event.', error);
+        return [];
+      }
+    };
+
+    const formatSessionDate = (startsAt: string) => {
+      const date = new Date(startsAt);
+      const day = new Intl.DateTimeFormat('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+      }).format(date);
+      const time = new Intl.DateTimeFormat('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+      }).format(date).replace('.', ':');
+      return `${day} · ${time} WIB`;
+    };
+
+    const formatDuration = (minutes: number) => {
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+      if (hours === 0) return `${minutes} menit`;
+      if (remainingMinutes === 0) return `${hours} jam`;
+      return `${hours} jam ${remainingMinutes} menit`;
+    };
+
+    const formatIDR = (price: number) =>
+      `Rp ${new Intl.NumberFormat('id-ID').format(price)}`;
+
+    const renderCard = (card: HTMLElement) => {
+      const sessions = readSessions(card);
+      const filteredSessions = sessions.filter(
+        (session) => selectedStudio === 'all' || session.studioSlug === selectedStudio,
+      );
+      card.hidden = filteredSessions.length === 0;
+      if (card.hidden) return false;
+
+      const closestSession =
+        filteredSessions.find((session) => session.seatsLeft > 0) ?? filteredSessions[0];
+      if (!closestSession) return false;
+
+      const studio = card.querySelector<HTMLElement>('[data-featured-studio]');
+      const date = card.querySelector<HTMLElement>('[data-featured-date]');
+      const seats = card.querySelector<HTMLElement>('[data-featured-seats]');
+      const price = card.querySelector<HTMLElement>('[data-featured-price]');
+      const button = card.querySelector<HTMLButtonElement>('[data-book]');
+      if (studio) {
+        studio.textContent =
+          `${closestSession.studioName} · ${formatDuration(closestSession.durationMinutes)}`;
+      }
+      if (date) date.textContent = formatSessionDate(closestSession.startsAt);
+      if (seats) seats.textContent = `Sisa ${closestSession.seatsLeft} kursi`;
+      if (price) price.textContent = formatIDR(closestSession.price);
+      if (button) {
+        const soldOut = closestSession.seatsLeft <= 0;
+        button.dataset.sessionId = closestSession.sessionId;
+        button.dataset.studioSlug = closestSession.studioSlug;
+        button.dataset.price = String(closestSession.price);
+        button.dataset.seats = String(closestSession.seatsLeft);
+        button.disabled = soldOut;
+        button.textContent = soldOut ? 'Kuota habis' : 'Reserve seat ↗';
+      }
+      return true;
+    };
+
+    const filterCards = () => {
+      let visibleCards = 0;
+      cards.forEach((card) => {
+        if (renderCard(card)) visibleCards++;
+      });
+
+      if (empty) {
+        empty.hidden = visibleCards > 0;
+        if (visibleCards === 0 && selectedStudio !== 'all') {
+          empty.textContent = 'Tidak ada event yang sesuai dengan filter yang dipilih.';
+        } else if (visibleCards === 0) {
+          empty.textContent = 'Belum ada event publik mendatang dari sistem.';
+        }
+      }
+    };
+
+    document.addEventListener('booking-events-updated', (event) => {
+      if (!(event instanceof CustomEvent) || !Array.isArray(event.detail)) {
+        console.error('[events] Respons pembaruan event booking tidak valid.');
+        return;
+      }
+      const sessionsBySlug = new Map<string, { title: string; sessions: CardSession[] }>();
+      for (const item of event.detail) {
+        if (
+          typeof item !== 'object' ||
+          item === null ||
+          !('slug' in item) ||
+          typeof item.slug !== 'string' ||
+          !('title' in item) ||
+          typeof item.title !== 'string' ||
+          !('sessions' in item) ||
+          !Array.isArray(item.sessions) ||
+          !item.sessions.every(isCardSession)
+        ) {
+          console.error('[events] Data pembaruan event booking tidak sesuai format.');
+          return;
+        }
+        sessionsBySlug.set(item.slug, { title: item.title, sessions: item.sessions });
+      }
+
+      cards.forEach((card) => {
+        const eventData = sessionsBySlug.get(card.dataset.eventSlug ?? '');
+        card.dataset.sessions = JSON.stringify(eventData?.sessions ?? []);
+        if (eventData) {
+          card.dataset.eventTitle = eventData.title;
+          const title = card.querySelector<HTMLAnchorElement>('h3 a');
+          if (title) title.textContent = eventData.title;
+        }
+      });
+      filterCards();
+    });
+
+    studioButtons.forEach((button) =>
+      button.addEventListener('click', () => {
+        selectedStudio = button.dataset.studioFilter ?? 'all';
+        studioButtons.forEach((item) => {
+          const active = item === button;
+          item.classList.toggle('active', active);
+          item.setAttribute('aria-pressed', String(active));
+        });
+        filterCards();
+      }),
+    );
+  });
+</script>
