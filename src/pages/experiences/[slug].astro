@@ -1,59 +1,61 @@
 ---
-import { getCollection } from "astro:content";
 import Gallery from "@/components/common/Gallery.astro";
 import BookButton from "@/components/booking/BookButton.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { formatDateShort, formatDuration, formatIDR, formatSeatsLeft, formatTime } from "@/lib/format";
 import { getCategoryLabel } from "@/lib/site";
+import { getEventBySlug } from "@/lib/events";
 
-export async function getStaticPaths() {
-  const events = await getCollection("events");
-  return events.map((event) => ({
-    params: { slug: event.id },
-    props: { event },
-  }));
-}
-
-const { event } = Astro.props;
-const data = event.data;
-type EventSession = typeof data.sessions[number];
-const sessions: EventSession[] = data.sessions.length > 0
-  ? data.sessions
-  : [{
-      sessionId: data.eventId,
-      startsAt: data.startsAt,
-      durationMinutes: data.durationMinutes,
-      price: data.price,
-      capacity: data.capacity,
-      seatsLeft: data.seatsLeft,
-      space: data.space,
-      studioName: data.studioName,
-    }];
-const gallery = [
-  ...(data.imageUrl
-    ? [{ url: data.imageUrl, altText: `Suasana ${data.title}` }]
-    : []),
-  ...data.images,
-].filter((image, index, images) =>
-  images.findIndex((candidate) => candidate.url === image.url) === index,
-);
-const isPast = data.startsAt.getTime() < Date.now();
-const endsAt = new Date(data.startsAt.getTime() + data.durationMinutes * 60_000);
-const jsonLd = JSON.stringify({
-  "@context": "https://schema.org",
-  "@type": "Event",
-  name: data.title,
-  description: data.subtitle,
-  startDate: data.startsAt.toISOString(),
-  endDate: endsAt.toISOString(),
-  eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-  location: { "@type": "Place", name: data.studioName },
-  offers: { "@type": "Offer", price: data.price, priceCurrency: "IDR" },
-}).replace(/</g, "\\u003c");
+const event = await getEventBySlug(Astro.params.slug ?? "");
+if (!event) Astro.response.status = 404;
+const data = event?.data;
+const sessions = data
+  ? data.sessions.length > 0
+    ? data.sessions
+    : [{
+        sessionId: data.eventId,
+        startsAt: data.startsAt,
+        durationMinutes: data.durationMinutes,
+        price: data.price,
+        capacity: data.capacity,
+        seatsLeft: data.seatsLeft,
+        space: data.space,
+        studioName: data.studioName,
+      }]
+  : [];
+const gallery = data
+  ? [
+      ...(data.imageUrl
+        ? [{ url: data.imageUrl, altText: `Suasana ${data.title}` }]
+        : []),
+      ...data.images,
+    ].filter((image, index, images) =>
+      images.findIndex((candidate) => candidate.url === image.url) === index,
+    )
+  : [];
+const isPast = data ? data.startsAt.getTime() < Date.now() : false;
+const endsAt = data
+  ? new Date(data.startsAt.getTime() + data.durationMinutes * 60_000)
+  : null;
+const jsonLd = data && endsAt
+  ? JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Event",
+      name: data.title,
+      description: data.subtitle,
+      startDate: data.startsAt.toISOString(),
+      endDate: endsAt.toISOString(),
+      eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+      location: { "@type": "Place", name: data.studioName },
+      offers: { "@type": "Offer", price: data.price, priceCurrency: "IDR" },
+    }).replace(/</g, "\\u003c")
+  : null;
 ---
-<BaseLayout title={`${data.title} — Cave of Chi`} description={data.subtitle}>
+<BaseLayout title={data ? `${data.title} — Cave of Chi` : "Event tidak ditemukan — Cave of Chi"} description={data?.subtitle ?? "Event tidak ditemukan."}>
+  {data && event ? (
+  <>
   <Fragment slot="head">
-    <script type="application/ld+json" set:html={jsonLd} />
+    {jsonLd && <script type="application/ld+json" set:html={jsonLd} />}
   </Fragment>
 
   <article class="detail section container">
@@ -96,6 +98,14 @@ const jsonLd = JSON.stringify({
       ))}
     </div>
   </article>
+  </>
+  ) : (
+    <section class="detail section container">
+      <h1 class="heading">Event tidak ditemukan</h1>
+      <p class="lead">Event ini mungkin sudah tidak tersedia.</p>
+      <a class="back-link" href="/experiences">← Semua experiences</a>
+    </section>
+  )}
 </BaseLayout>
 
 <style>

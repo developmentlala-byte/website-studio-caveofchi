@@ -1,6 +1,6 @@
-# Cave of Chi — Astro (static)
+# Cave of Chi — Astro (SSR)
 
-Website marketing + booking untuk Cave of Chi. Astro 7, TypeScript strict, output static.
+Website marketing + booking untuk Cave of Chi. Astro 7, TypeScript strict, SSR melalui Vercel adapter.
 TANPA React/Vue/Tailwind/UI framework. Interaksi = TypeScript biasa.
 
 ## Aturan struktur
@@ -9,12 +9,12 @@ TANPA React/Vue/Tailwind/UI framework. Interaksi = TypeScript biasa.
 - Komponen per domain di `src/components/<domain>/`. Satu komponen = satu tanggung jawab.
 - Copy statis di `src/data/*.ts`, bukan hardcoded di markup yang berulang.
 - Semua import pakai alias `@/` (contoh: `@/lib/format`).
-- Data event HANYA lewat Content Collection `events` (`src/content.config.ts`) dan helper `@/lib/events`.
+- Data event diambil runtime dari API melalui `@/lib/api/events` dan `@/lib/events`.
   Jangan `fetch` event langsung dari komponen/halaman.
 
 ## Batas server vs browser (penting)
 
-- `src/lib/api/events.ts` dan `src/lib/api/studios.ts` = build-time only dan hanya memakai endpoint baca publik. Dilarang di-import dari `<script>` client.
+- `src/lib/api/events.ts` dan `src/lib/api/studios.ts` = server-side runtime dan hanya memakai endpoint baca publik. Dilarang di-import dari `<script>` client.
 - Event dan studio tidak boleh memakai mock atau konstanta data; API publik wajib tersedia saat build.
 - `src/lib/api/bookings.ts` = browser. Hanya boleh pakai variabel `PUBLIC_*`. Jangan taruh secret.
 - Dilarang menaruh secret/token di variabel berawalan `PUBLIC_`.

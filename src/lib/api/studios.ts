@@ -90,5 +90,7 @@ export async function fetchStudios(): Promise<PublicStudio[]> {
     );
   }
 
-  return (await fetchPublicCollection("studios")).map(toStudio);
+  return (await fetchPublicCollection("studios", { cache: "no-store" })).map(
+    toStudio,
+  );
 }

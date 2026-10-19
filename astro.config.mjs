@@ -1,13 +1,13 @@
 import { defineConfig } from "astro/config";
-import sitemap from "@astrojs/sitemap";
+import vercel from "@astrojs/vercel";
 
 const site = process.env.SITE_URL;
 
 export default defineConfig({
   ...(site ? { site } : {}),
-  output: "static",
+  output: "server",
+  adapter: vercel(),
   trailingSlash: "never",
-  integrations: site ? [sitemap()] : [],
   vite: {
     server: {
       strictPort: true,

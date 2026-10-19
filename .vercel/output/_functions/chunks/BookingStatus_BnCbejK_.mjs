@@ -1,0 +1,14 @@
+import { A as renderTemplate, j as maybeRenderHead, w as renderComponent } from "./sequence_9PrHO--S.mjs";
+import { d as createComponent } from "./_astro_assets_h7Pf3sRe.mjs";
+import { i as renderScript, t as $$BaseLayout } from "./BaseLayout_CQ5aQ8le.mjs";
+//#region src/components/booking/BookingStatus.astro
+var $$BookingStatus = createComponent(($$result, $$props, $$slots) => {
+	return renderTemplate`${renderComponent($$result, "BaseLayout", $$BaseLayout, {
+		"title": "Detail booking — Cave of Chi",
+		"description": "Detail event dan status pembayaran booking Cave of Chi.",
+		"noindex": true,
+		"data-astro-cid-rbosskag": true
+	}, { "default": ($$result) => renderTemplate`${maybeRenderHead($$result)}<section class="booking-page section container" aria-labelledby="booking-title" data-astro-cid-rbosskag><div class="eyebrow" data-astro-cid-rbosskag>Booking · Midtrans</div><h1 id="booking-title" class="heading" data-astro-cid-rbosskag>Detail booking Anda</h1><p class="lead" data-message aria-live="polite" data-astro-cid-rbosskag>Kami sedang memeriksa status pembayaran Anda. Status booking hanya dikonfirmasi setelah pembayaran diverifikasi oleh Midtrans.</p><dl class="booking-details" data-details hidden data-astro-cid-rbosskag><div data-astro-cid-rbosskag><dt data-astro-cid-rbosskag>Kode booking</dt><dd data-code data-astro-cid-rbosskag></dd></div><div data-astro-cid-rbosskag><dt data-astro-cid-rbosskag>Status pembayaran</dt><dd data-payment-status data-astro-cid-rbosskag></dd></div><div data-astro-cid-rbosskag><dt data-astro-cid-rbosskag>Event</dt><dd data-event data-astro-cid-rbosskag></dd></div><div data-astro-cid-rbosskag><dt data-astro-cid-rbosskag>Studio</dt><dd data-studio data-astro-cid-rbosskag></dd></div><div data-astro-cid-rbosskag><dt data-astro-cid-rbosskag>Jadwal</dt><dd data-date data-astro-cid-rbosskag></dd></div><div data-astro-cid-rbosskag><dt data-astro-cid-rbosskag>Jumlah peserta</dt><dd data-quantity data-astro-cid-rbosskag></dd></div><div data-astro-cid-rbosskag><dt data-astro-cid-rbosskag>Harga per peserta</dt><dd data-unit-price data-astro-cid-rbosskag></dd></div><div data-astro-cid-rbosskag><dt data-astro-cid-rbosskag>Total pembayaran</dt><dd data-total data-astro-cid-rbosskag></dd></div></dl><div class="status-actions" data-astro-cid-rbosskag><a class="receipt-link" data-receipt hidden target="_blank" rel="noopener noreferrer" data-astro-cid-rbosskag>Cetak / simpan kwitansi</a><button type="button" data-retry hidden data-astro-cid-rbosskag>Periksa status lagi</button><a href="/experiences" data-astro-cid-rbosskag>Lihat event lainnya</a></div></section>` })}${renderScript($$result, "C:/project-lala/BMS/mahalu.studio.management/WEBSITE/src/components/booking/BookingStatus.astro?astro&type=script&index=0&lang.ts")}`;
+}, "C:/project-lala/BMS/mahalu.studio.management/WEBSITE/src/components/booking/BookingStatus.astro", void 0);
+//#endregion
+export { $$BookingStatus as t };

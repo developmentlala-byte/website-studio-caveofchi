@@ -159,5 +159,7 @@ export async function fetchEvents(): Promise<RawEvent[]> {
     );
   }
 
-  return (await fetchPublicCollection("events")).map(toEvent);
+  return (await fetchPublicCollection("events", { cache: "no-store" })).map(
+    toEvent,
+  );
 }

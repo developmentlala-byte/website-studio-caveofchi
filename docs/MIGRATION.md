@@ -1,23 +1,23 @@
-# Panduan Migrasi Cave of Chi → Astro (Static)
+# Panduan Arsitektur Cave of Chi
 
-Simpan file ini sebagai `docs/MIGRATION.md` di repo, lalu referensikan ke Copilot dengan `#file:docs/MIGRATION.md`.
+Dokumen ini menyimpan catatan migrasi awal; beberapa contoh di bawah masih menggambarkan konfigurasi static lama. Arsitektur website yang aktif sekarang adalah Astro SSR dengan adapter Vercel.
 
 ## Keputusan yang dikunci
 
 - **Pure Astro:** tanpa framework JS, interaksi pakai TypeScript biasa.
-- **Static output:** `output: 'static'`.
-- **Data dari sistemmu:** event dan studio lewat endpoint API publik saat build; booking lewat API dari browser.
+- **Server output:** `output: 'server'` dengan `@astrojs/vercel`.
+- **Data dari sistemmu:** event dan studio lewat endpoint API publik saat request halaman; booking lewat API dari browser.
 - **Copilot:** aturan ditaruh di `.github/copilot-instructions.md`, dibaca otomatis oleh Copilot.
 - **Default lain:** multi-page ringan, Content Collections, CSS scoped + design tokens, tanpa i18n.
 
-## Dua konsekuensi static + data dari sistem
+## Konsekuensi SSR + data dari sistem
 
-1. **Data event dan studio beku sejak build.** Sisa kursi, event baru, dan perubahan studio akan basi sampai build berikutnya. Website membaca event dari `/public/events` dan studio dari `/public/studios`; pasang **deploy hook** atau jadwalkan rebuild agar konten tetap diperbarui.
-2. **Booking dari browser berarti endpoint-nya publik.** Tidak ada server Astro di tengah, jadi siapa pun bisa memanggil API-mu. Validasi, pengecekan kuota, rate limit, dan CORS terbatas ke domainmu **wajib ada di sisi sistemmu**. Validasi di frontend hanya untuk UX.
+1. **Data event dan studio dibaca saat request halaman.** Perubahan konten dan gambar tidak memerlukan rebuild. Respons HTML menggunakan `Cache-Control: no-store`; request ke `/public/events` dan `/public/studios` terjadi dari server website.
+2. **Booking dari browser berarti endpoint-nya publik.** Siapa pun bisa memanggil API secara langsung, jadi validasi, pengecekan kuota, rate limit, dan CORS terbatas ke domainmu **wajib ada di sisi sistemmu**. Validasi di frontend hanya untuk UX.
 
 ## Perilaku implementasi saat ini
 
-- Semua studio dan event mendatang diambil dari API saat build, tanpa data dummy atau fallback data lokal.
+- Semua studio dan event mendatang diambil dari API saat request, tanpa data dummy atau fallback data lokal.
 - Kartu event tampil dalam satu daftar datar. Semua event tampil secara default; filter studio hanya menyaring setelah pengguna memilih studio, dan sesi di studio lain disembunyikan.
 - Nama studio pada daftar event, jadwal, detail event, dan alur booking berasal dari `studioName` pada respons API event. Studio filter dan showcase menggunakan daftar `GET /public/studios`.
 - Gambar event hanya ditampilkan jika API menyediakan `imageUrl`; situs tidak menggantinya dengan gambar event lokal.
@@ -35,7 +35,7 @@ npm i @fontsource-variable/dm-sans @fontsource/cormorant-garamond
 npm i -D @astrojs/check typescript
 ```
 
-Contoh awal di bawah ditulis untuk **Astro 5.x**. Repository ini sekarang memakai Astro 7.3.8; jangan downgrade. Sesuaikan API Content Collections dengan dokumentasi versi yang terpasang. Pada Astro 7, impor `defineCollection` dari `astro:content` dan `z` dari `astro/zod`.
+Contoh setup static dan Content Collections di bawah adalah catatan historis, bukan konfigurasi deploy aktif. Repository memakai Astro 7 dengan `output: "server"` dan adapter `@astrojs/vercel`; rujuk `astro.config.mjs` dan `package.json` untuk konfigurasi aktif.
 
 `package.json` scripts:
 
@@ -52,7 +52,7 @@ Contoh awal di bawah ditulis untuk **Astro 5.x**. Repository ini sekarang memaka
 
 ```bash
 # URL root API, termasuk prefix /api bila digunakan, tanpa trailing slash.
-# Data event dan studio diambil dari endpoint publik saat build.
+# URL backend yang dipakai server website saat request halaman.
 PUBLIC_API_URL=
 # Mode simulasi booking dan badge demo. Event dan studio tetap wajib dibaca dari API.
 PUBLIC_DEMO_MODE=true
@@ -131,9 +131,9 @@ export default defineConfig({
 ## 3. `.github/copilot-instructions.md`
 
 ````md
-# Cave of Chi — Astro (static)
+# Cave of Chi — Astro (SSR)
 
-Website marketing + booking untuk Cave of Chi. Astro 7, TypeScript strict, output static.
+Website marketing + booking untuk Cave of Chi. Astro 7, TypeScript strict, output server melalui Vercel.
 TANPA React/Vue/Tailwind/UI framework. Interaksi = TypeScript biasa.
 
 ## Aturan struktur
@@ -141,11 +141,11 @@ TANPA React/Vue/Tailwind/UI framework. Interaksi = TypeScript biasa.
 - Komponen per domain di `src/components/<domain>/`. Satu komponen = satu tanggung jawab.
 - Copy statis di `src/data/*.ts`, bukan hardcoded di markup yang berulang.
 - Semua import pakai alias `@/` (contoh: `@/lib/format`).
-- Data event HANYA lewat Content Collection `events` (`src/content.config.ts`) dan helper `@/lib/events`.
+- Data event lewat API runtime melalui `@/lib/api/events` dan helper `@/lib/events`.
   Jangan `fetch` event langsung dari komponen/halaman.
 
 ## Batas server vs browser (penting)
-- `src/lib/api/events.ts` dan `src/lib/api/studios.ts` = build-time only dan hanya memakai endpoint baca publik. Dilarang di-import dari `<script>` client.
+- `src/lib/api/events.ts` dan `src/lib/api/studios.ts` = server-side runtime dan hanya memakai endpoint baca publik. Dilarang di-import dari `<script>` client.
 - `src/lib/api/bookings.ts` = browser. Hanya boleh pakai variabel `PUBLIC_*`. Jangan taruh secret.
 - Dilarang menaruh secret/token di variabel berawalan `PUBLIC_`.
 
@@ -258,7 +258,7 @@ export function formatMonthRange(a: Date, b: Date) {
 }
 ```
 
-### `src/lib/api/events.ts` (build-time only)
+### `src/lib/api/events.ts` (server-side runtime)
 
 Implementasi aktual mengambil collection event melalui `fetchPublicCollection()` di `src/lib/api/public.ts`. Endpoint `GET /public/events` menggunakan envelope `{ success, data, meta }`; hasilnya dinormalisasi lalu divalidasi oleh Content Collection. Endpoint baca publik tidak memerlukan token. Gunakan source aktual sebagai referensi kontrak.
 
@@ -1347,6 +1347,6 @@ Beri satu fase per sesi (Agent mode). Contoh prompt:
 
 1. **Kontrak API.** Data situs memakai `GET /public/events` dan `GET /public/studios` tanpa token. Endpoint booking browser di `bookings.ts` tetap perlu disesuaikan dengan API booking aktif.
 2. **Foto event.** Tiap event dapat menyediakan `imageUrl` dari sistem; jika kosong, situs tidak menampilkan gambar pengganti lokal.
-3. **Rebuild otomatis.** Tanpa deploy hook dan jadwal rebuild harian, event baru dan status "mendatang" tidak muncul sampai build manual. Ini keputusan operasional terbesar dari pilihan static.
+3. **SSR dan biaya request.** Data event/studio diambil ulang dari backend setiap request halaman; dampak biaya bergantung pada trafik dan biaya server/backend. Tidak ada deploy hook untuk perubahan konten.
 4. **Anti-spam booking.** Endpoint publik biasanya butuh rate limit dan CAPTCHA (misalnya Turnstile) di sisi sistemmu.
 5. **Domain dan OG image.** Isi `SITE_URL` di environment deploy dan ganti `public/og-default.svg` dengan OG image final. Tanpa itu canonical dan sitemap tidak dibuat.

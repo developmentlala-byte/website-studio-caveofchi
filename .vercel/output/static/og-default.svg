@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#41352d"/>
+      <stop offset="1" stop-color="#8a604a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <path d="M740 630V290C740 98 870 0 1040 0s290 98 290 290v340H740Z" fill="#2d2621" opacity=".48"/>
+  <path d="M790 630V294c0-148 104-232 250-232s250 84 250 232v336H790Z" fill="#e9dfd2"/>
+  <path d="M0 0h1200v630H0z" fill="#41352d" opacity=".18"/>
+  <text x="88" y="240" fill="#fbf8f3" font-family="Georgia,serif" font-size="92" letter-spacing="2">CAVE of CHI</text>
+  <text x="96" y="300" fill="#e9dfd2" font-family="Arial,sans-serif" font-size="22" letter-spacing="8">ART. SPACE. ENERGY.</text>
+  <path d="M96 354h116" stroke="#b97557" stroke-width="5"/>
+  <text x="96" y="426" fill="#fbf8f3" font-family="Arial,sans-serif" font-size="24">A creative social sanctuary</text>
+  <text x="96" y="468" fill="#e9dfd2" font-family="Arial,sans-serif" font-size="18">Make, feel, and connect.</text>
+</svg>
