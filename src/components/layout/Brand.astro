@@ -1,5 +1,4 @@
 ---
-import { Image } from 'astro:assets';
 import logo from '@/assets/images/logo-cave-of-chi.png';
 
 interface Props {
@@ -14,8 +13,8 @@ const DISPLAY_HEIGHT = { md: 48, lg: 88 } as const;
 const height = DISPLAY_HEIGHT[size] * 2;
 ---
 <a class:list={['brand', size]} href="/">
-  <Image
-    src={logo}
+  <img
+    src={logo.src}
     alt="Cave of Chi — Art. Space. Energy."
     height={height}
     class="brand-logo"

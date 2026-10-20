@@ -1,12 +1,11 @@
 ---
 // RitualBand.astro
-import { Image } from 'astro:assets';
 import sound from '@/assets/images/sound.webp';
 import { RITUAL_STEPS } from '@/data/ritual';
 ---
 <section class="ritual">
   <div class="ritual-photo">
-    <Image src={sound} widths={[640, 960, 1280]} sizes="(max-width: 740px) 100vw, 50vw"
+    <img src={sound.src} width={sound.width} height={sound.height}
       alt="Suasana sound healing dengan singing bowl dan gong di dalam cave bercahaya lilin" loading="lazy" />
   </div>
   <div class="ritual-copy">
