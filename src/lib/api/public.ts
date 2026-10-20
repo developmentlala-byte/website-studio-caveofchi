@@ -71,10 +71,23 @@ export function resolvePublicAssetUrl(value: string | null): string | null {
     throw new Error("PUBLIC_API_URL wajib diisi untuk mengambil URL aset publik.");
   }
 
-  const apiOrigin = new URL(API_URL).origin;
-  const url = new URL(value, `${apiOrigin}/`);
+  const apiUrl = new URL(API_URL);
+  const apiPath = apiUrl.pathname
+    .replace(/\/+$/, "")
+    .replace(/\/api$/, "");
+  const url = new URL(value, `${apiUrl.origin}${apiPath}/`);
   if (url.protocol !== "https:" && url.protocol !== "http:") {
     throw new Error("URL aset dari API harus menggunakan HTTP atau HTTPS.");
+  }
+
+  const isLocalHost = ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
+  const isNgrokHost = url.hostname.endsWith(".ngrok-free.dev");
+  if ((isLocalHost || isNgrokHost) && url.pathname.startsWith("/storage/")) {
+    const assetPath =
+      apiPath && url.pathname.startsWith(`${apiPath}/`)
+        ? url.pathname.slice(apiPath.length)
+        : url.pathname;
+    return `/asset-proxy${assetPath}${url.search}`;
   }
 
   return url.toString();
