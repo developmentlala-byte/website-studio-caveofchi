@@ -34,6 +34,11 @@
             />
           </div>
           <div class="choice-list event-list" role="listbox" aria-label="Event" data-events></div>
+          <nav class="event-pagination" aria-label="Navigasi halaman event" data-event-pagination hidden>
+            <button type="button" data-event-previous>Sebelumnya</button>
+            <span data-event-page aria-live="polite"></span>
+            <button type="button" data-event-next>Berikutnya</button>
+          </nav>
           <p class="load-message" role="status" data-events-status>Memuat event...</p>
           <button type="button" class="retry-button" data-retry hidden>Coba lagi</button>
 
@@ -58,18 +63,6 @@
               placeholder="Nama lengkap"
               required
               maxlength="150"
-            />
-          </div>
-          <div class="field">
-            <label for="bk-email">Email</label>
-            <input
-              id="bk-email"
-              name="email"
-              type="email"
-              autocomplete="email"
-              placeholder="nama@email.com"
-              required
-              maxlength="254"
             />
           </div>
           <div class="field">
@@ -118,7 +111,6 @@
           <h3>Pemesan</h3>
           <dl>
             <div><dt>Nama</dt><dd data-bind="customer-name"></dd></div>
-            <div><dt>Email</dt><dd data-bind="customer-email"></dd></div>
             <div><dt>Telepon</dt><dd data-bind="customer-phone"></dd></div>
           </dl>
         </div>
@@ -358,6 +350,34 @@
     max-height: 138px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     overflow: auto;
+  }
+
+  .event-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .event-pagination[hidden] {
+    display: none;
+  }
+
+  .event-pagination button {
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--umber);
+    cursor: pointer;
+  }
+
+  .event-pagination button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
   }
 
   :global(.choice-card) {

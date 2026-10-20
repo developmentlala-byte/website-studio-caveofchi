@@ -11,46 +11,55 @@ import {
 } from '@/lib/format';
 
 type EventSession = CaveEvent['data']['sessions'][number];
-interface Props { event: CaveEvent }
-const { event } = Astro.props;
+interface Props { event: CaveEvent; hidden?: boolean }
+const { event, hidden = false } = Astro.props;
 const d = event.data;
-const sessions: EventSession[] = (d.sessions.length > 0
-  ? d.sessions
-  : [{
-      sessionId: d.eventId,
-      startsAt: d.startsAt,
-      space: d.space,
-      price: d.price,
-      capacity: d.capacity,
-      seatsLeft: d.seatsLeft,
-      durationMinutes: d.durationMinutes,
-      studioName: d.studioName,
-    }])
+const sessions: EventSession[] = d.sessions
   .filter((session) => session.startsAt.getTime() >= Date.now())
   .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
 const featuredSession =
-  sessions.find((session) => session.seatsLeft > 0) ?? sessions[0];
+  sessions.find((session) => session.isBookable && session.seatsLeft > 0) ??
+  sessions.find((session) => session.salesStatus === 'coming_soon') ??
+  sessions[0];
 const sessionOptions = sessions.map((session) => ({
   sessionId: session.sessionId,
   startsAt: session.startsAt.toISOString(),
-  durationMinutes: session.durationMinutes || d.durationMinutes,
+  durationMinutes: session.durationMinutes,
   price: session.price,
   seatsLeft: session.seatsLeft,
   studioSlug: session.space,
   studioName: session.studioName,
+  registrationOpensAt: session.registrationOpensAt?.toISOString() ?? null,
+  isBookable: session.isBookable,
+  salesStatus: session.salesStatus,
 }));
 
-// Harga: kalau harga antar sesi berbeda, tampilkan yang termurah dengan label
-// "Starting from"; kalau sama, tampilkan harga sesi itu per peserta.
+// Harga antar sesi dapat berbeda; tampilkan harga terendah untuk rentang harga.
 const prices = sessions.map((session) => session.price);
 const hasPriceRange = new Set(prices).size > 1;
 const displayPrice = hasPriceRange
   ? Math.min(...prices)
   : featuredSession?.price;
-const priceLabel = hasPriceRange ? 'Starting from' : 'Per peserta';
+const priceLabel = sessions.length === 0
+  ? 'Harga'
+  : hasPriceRange
+    ? 'Mulai dari'
+    : 'Per peserta';
+const featuredStatus = featuredSession?.salesStatus === 'coming_soon'
+  ? `Dibuka ${featuredSession.registrationOpensAt
+      ? formatDateShort(featuredSession.registrationOpensAt)
+      : 'segera'}`
+  : featuredSession?.salesStatus === 'sold_out'
+    ? 'Kuota habis'
+    : featuredSession?.salesStatus === 'closed'
+      ? 'Pendaftaran ditutup'
+      : featuredSession
+        ? formatSeatsLeft(featuredSession.seatsLeft)
+        : 'Jadwal segera hadir';
 ---
 <article
   class="event-card"
+  hidden={hidden}
   data-event-card
   data-event-slug={event.id}
   data-event-title={d.title}
@@ -63,31 +72,42 @@ const priceLabel = hasPriceRange ? 'Starting from' : 'Per peserta';
   </div>
   <div class="event-info">
     <div class="event-sub" data-featured-studio>
-      {featuredSession?.studioName ?? d.studioName}
-      {featuredSession && <>&nbsp; • &nbsp;{formatDuration(featuredSession.durationMinutes || d.durationMinutes)}</>}
+      {featuredSession
+        ? `${featuredSession.studioName} · ${formatDuration(featuredSession.durationMinutes)}`
+        : 'Jadwal segera hadir'}
     </div>
     <h3><a href={`/experiences/${event.id}`}>{d.title}</a></h3>
     <div class="event-details">
       <span data-featured-date>
         {featuredSession
           ? `${formatDateShort(featuredSession.startsAt)} · ${formatTime(featuredSession.startsAt)} WIB`
-          : 'Jadwal segera hadir'}
+          : 'Tanggal segera diumumkan'}
       </span>
-      <span data-featured-seats>
-        {featuredSession ? formatSeatsLeft(featuredSession.seatsLeft) : 'Belum ada sesi tersedia'}
-      </span>
+      <span data-featured-seats>{featuredStatus}</span>
     </div>
     <div class="event-footer">
       <div class="event-price">
         <small>{priceLabel}</small>
-        <span data-featured-price>{displayPrice !== undefined ? formatIDR(displayPrice) : '–'}</span>
+        <span data-featured-price>
+          {displayPrice !== undefined
+            ? formatIDR(displayPrice)
+            : sessions.length === 0
+              ? 'Segera diumumkan'
+              : '–'}
+        </span>
       </div>
       {featuredSession ? (
         <BookButton event={event} session={featuredSession}>
-          {featuredSession.seatsLeft > 0 ? 'Reserve seat ↗' : 'Kuota habis'}
+          {featuredSession.isBookable
+            ? 'Pesan sekarang ↗'
+            : featuredSession.salesStatus === 'coming_soon'
+              ? 'Segera dibuka'
+              : featuredSession.salesStatus === 'sold_out'
+                ? 'Kuota habis'
+                : 'Pendaftaran ditutup'}
         </BookButton>
       ) : (
-        <button type="button" class="book unavailable" disabled>Belum tersedia</button>
+        <a class="book details-link" href={`/experiences/${event.id}`}>Lihat detail ↗</a>
       )}
     </div>
   </div>
@@ -229,15 +249,20 @@ const priceLabel = hasPriceRange ? 'Starting from' : 'Per peserta';
   }
 
   .event-footer :global(.book:hover),
-  .event-footer :global(button:hover:not(:disabled)) {
+  .event-footer :global(button:hover:not(:disabled)),
+  .event-footer .details-link:hover {
     background: #8a644e;
   }
 
   .event-footer :global(.book:disabled),
   .event-footer :global(button:disabled),
-  .unavailable {
+  .event-footer :global(button[disabled]) {
     cursor: not-allowed;
     opacity: 0.5;
+  }
+
+  .details-link {
+    text-decoration: none;
   }
 
   @media (max-width: 740px) {

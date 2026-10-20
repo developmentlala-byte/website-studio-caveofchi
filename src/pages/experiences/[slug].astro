@@ -9,20 +9,7 @@ import { getEventBySlug } from "@/lib/events";
 const event = await getEventBySlug(Astro.params.slug ?? "");
 if (!event) Astro.response.status = 404;
 const data = event?.data;
-const sessions = data
-  ? data.sessions.length > 0
-    ? data.sessions
-    : [{
-        sessionId: data.eventId,
-        startsAt: data.startsAt,
-        durationMinutes: data.durationMinutes,
-        price: data.price,
-        capacity: data.capacity,
-        seatsLeft: data.seatsLeft,
-        space: data.space,
-        studioName: data.studioName,
-      }]
-  : [];
+const sessions = data?.sessions ?? [];
 const gallery = data
   ? [
       ...(data.imageUrl
@@ -33,23 +20,33 @@ const gallery = data
       images.findIndex((candidate) => candidate.url === image.url) === index,
     )
   : [];
-const isPast = data ? data.startsAt.getTime() < Date.now() : false;
-const endsAt = data
-  ? new Date(data.startsAt.getTime() + data.durationMinutes * 60_000)
+const featuredSession = sessions[0];
+const endsAt = featuredSession
+  ? new Date(featuredSession.startsAt.getTime() + featuredSession.durationMinutes * 60_000)
   : null;
-const jsonLd = data && endsAt
+const jsonLd = data && featuredSession && endsAt
   ? JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Event",
       name: data.title,
       description: data.subtitle,
-      startDate: data.startsAt.toISOString(),
+      startDate: featuredSession.startsAt.toISOString(),
       endDate: endsAt.toISOString(),
       eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-      location: { "@type": "Place", name: data.studioName },
-      offers: { "@type": "Offer", price: data.price, priceCurrency: "IDR" },
+      location: { "@type": "Place", name: featuredSession.studioName },
+      offers: { "@type": "Offer", price: featuredSession.price, priceCurrency: "IDR" },
     }).replace(/</g, "\\u003c")
   : null;
+const salesLabel = (session: (typeof sessions)[number]) => {
+  if (session.salesStatus === "coming_soon") {
+    return session.registrationOpensAt
+      ? `Penjualan dibuka ${formatDateShort(session.registrationOpensAt)}`
+      : "Penjualan segera dibuka";
+  }
+  if (session.salesStatus === "sold_out") return "Kuota habis";
+  if (session.salesStatus === "closed") return "Pendaftaran ditutup";
+  return formatSeatsLeft(session.seatsLeft);
+};
 ---
 <BaseLayout title={data ? `${data.title} — Cave of Chi` : "Event tidak ditemukan — Cave of Chi"} description={data?.subtitle ?? "Event tidak ditemukan."}>
   {data && event ? (
@@ -66,10 +63,10 @@ const jsonLd = data && endsAt
     <Gallery images={gallery} label={data.title} />
 
     <dl class="facts">
-      <div><dt>Jadwal</dt><dd>{sessions.length} sesi</dd></div>
-      <div><dt>Durasi</dt><dd>{formatDuration(data.durationMinutes)}</dd></div>
-      <div><dt>Tempat</dt><dd>{data.studioName}</dd></div>
-      <div><dt>Mulai dari</dt><dd>{formatIDR(Math.min(...sessions.map((session) => session.price)))}</dd></div>
+      <div><dt>Jadwal</dt><dd>{sessions.length > 0 ? `${sessions.length} sesi` : "Segera diumumkan"}</dd></div>
+      <div><dt>Durasi</dt><dd>{featuredSession ? formatDuration(featuredSession.durationMinutes) : "Segera diumumkan"}</dd></div>
+      <div><dt>Tempat</dt><dd>{featuredSession?.studioName ?? "Segera diumumkan"}</dd></div>
+      <div><dt>Harga</dt><dd>{sessions.length > 0 ? `Mulai dari ${formatIDR(Math.min(...sessions.map((session) => session.price)))}` : "Segera diumumkan"}</dd></div>
     </dl>
 
     {data.description?.split("\n\n").map((paragraph) => <p class="description">{paragraph}</p>)}
@@ -81,22 +78,32 @@ const jsonLd = data && endsAt
     )}
 
     <h2>Jadwal &amp; ketersediaan</h2>
+    {sessions.length === 0 ? (
+      <p class="coming-soon">Jadwal dan harga akan diumumkan di halaman ini setelah sesi tersedia.</p>
+    ) : (
     <div class="detail-sessions">
       {sessions.map((session) => (
         <div class="detail-session">
           <div class="session-info">
             <strong>{formatDateShort(session.startsAt)} · {formatTime(session.startsAt)} WIB</strong>
-            <small>{session.studioName} · {formatDuration(session.durationMinutes)} · <span data-seats-left={session.sessionId}>{formatSeatsLeft(session.seatsLeft)}</span></small>
+            <small>{session.studioName} · {formatDuration(session.durationMinutes)} · <span data-seats-left={session.sessionId}>{salesLabel(session)}</span></small>
           </div>
           <div class="session-offer">
             <strong>{formatIDR(session.price)}</strong>
-            {isPast
-              ? <span class="micro">Event ini sudah berlangsung.</span>
-              : <BookButton event={event} session={session}>Pesan ↗</BookButton>}
+            <BookButton event={event} session={session}>
+              {session.isBookable
+                ? "Pesan sekarang ↗"
+                : session.salesStatus === "coming_soon"
+                  ? "Segera dibuka"
+                  : session.salesStatus === "sold_out"
+                    ? "Kuota habis"
+                    : "Pendaftaran ditutup"}
+            </BookButton>
           </div>
         </div>
       ))}
     </div>
+    )}
   </article>
   </>
   ) : (

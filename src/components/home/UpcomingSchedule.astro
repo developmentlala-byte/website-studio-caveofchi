@@ -1,7 +1,7 @@
 ---
 import BookButton from '@/components/booking/BookButton.astro';
 import type { CaveEvent } from '@/lib/events';
-import { formatDayNumber, formatIDR, formatMonthRange, formatSeatsLeft, formatTime, formatWeekday, dayKey } from '@/lib/format';
+import { formatDateShort, formatDayNumber, formatIDR, formatMonthRange, formatSeatsLeft, formatTime, formatWeekday, dayKey } from '@/lib/format';
 
 interface Props { events: CaveEvent[] }
 const { events } = Astro.props;
@@ -18,21 +18,7 @@ interface Day { id: string; date: Date; dow: string; day: string; sessions: Sess
 
 const grouped = new Map<string, Day>();
 for (const event of events) {
-  const sessions = event.data.sessions.length > 0
-    ? event.data.sessions
-    : [{
-        startsAt: event.data.startsAt,
-        sessionId: event.data.eventId,
-        durationMinutes: event.data.durationMinutes,
-        title: event.data.title,
-        price: event.data.price,
-        capacity: event.data.capacity,
-        seatsLeft: event.data.seatsLeft,
-        space: event.data.space,
-        studioName: event.data.studioName,
-      }];
-
-  for (const session of sessions) {
+  for (const session of event.data.sessions) {
     const date = session.startsAt;
     const key = dayKey(date);
     let day = grouped.get(key);
@@ -56,6 +42,17 @@ for (const event of events) {
     });
   }
 }
+
+const salesLabel = (session: EventSession) => {
+  if (session.salesStatus === 'coming_soon') {
+    return session.registrationOpensAt
+      ? `Penjualan dibuka ${formatDateShort(session.registrationOpensAt)}`
+      : 'Penjualan segera dibuka';
+  }
+  if (session.salesStatus === 'sold_out') return 'Kuota habis';
+  if (session.salesStatus === 'closed') return 'Pendaftaran ditutup';
+  return formatSeatsLeft(session.seatsLeft);
+};
 
 const DAYS = [...grouped.values()];
 const monthRange = DAYS.length > 0
@@ -112,9 +109,11 @@ const monthRange = DAYS.length > 0
                   <span class="time">{s.time}</span>
                   <div class="info">
                     <strong>{s.title}</strong>
-                    <small>{s.cave} · {s.price} · <span data-seats-left={s.session.sessionId}>{formatSeatsLeft(s.session.seatsLeft)}</span></small>
+                    <small>{s.cave} · {s.price} · <span data-seats-left={s.session.sessionId}>{salesLabel(s.session)}</span></small>
                   </div>
-                  <BookButton event={s.event} session={s.session} variant="outline">Book ↗</BookButton>
+                  <BookButton event={s.event} session={s.session} variant="outline">
+                    {s.session.isBookable ? 'Pesan sekarang ↗' : s.session.salesStatus === 'coming_soon' ? 'Segera dibuka' : s.session.salesStatus === 'sold_out' ? 'Kuota habis' : 'Pendaftaran ditutup'}
+                  </BookButton>
                 </div>
               ))}
             </div>

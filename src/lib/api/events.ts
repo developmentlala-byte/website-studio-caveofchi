@@ -26,11 +26,16 @@ export interface PublicBookingSession {
   seatsLeft: number;
   studioSlug: string;
   studioName: string;
+  registrationOpensAt: string | null;
+  registrationClosesAt: string | null;
+  isBookable: boolean;
+  salesStatus: "coming_soon" | "open" | "sold_out" | "closed";
 }
 
 export interface PublicBookingEvent {
   slug: string;
   title: string;
+  status: "draft" | "published" | "closed" | "archived";
   sessions: PublicBookingSession[];
 }
 
@@ -47,6 +52,9 @@ export async function fetchPublicBookingEvents(): Promise<PublicBookingEvent[]> 
       event.slug.trim() === "" ||
       typeof event.title !== "string" ||
       event.title.trim() === "" ||
+      !["draft", "published", "closed", "archived"].includes(
+        String(event.status),
+      ) ||
       !Array.isArray(event.sessions)
     ) {
       throw new Error("[events] Sesi event publik harus berupa array.");
@@ -58,6 +66,20 @@ export async function fetchPublicBookingEvents(): Promise<PublicBookingEvent[]> 
       }
       const item = session as Record<string, unknown>;
       const startsAt = typeof item.startsAt === "string" ? Date.parse(item.startsAt) : NaN;
+      const registrationOpensAt =
+        item.registrationOpensAt === null
+          ? null
+          : typeof item.registrationOpensAt === "string" &&
+              Number.isFinite(Date.parse(item.registrationOpensAt))
+            ? item.registrationOpensAt
+            : undefined;
+      const registrationClosesAt =
+        item.registrationClosesAt === null
+          ? null
+          : typeof item.registrationClosesAt === "string" &&
+              Number.isFinite(Date.parse(item.registrationClosesAt))
+            ? item.registrationClosesAt
+            : undefined;
       if (
         typeof item.sessionId !== "string" ||
         !/^\d+$/.test(item.sessionId) ||
@@ -74,7 +96,13 @@ export async function fetchPublicBookingEvents(): Promise<PublicBookingEvent[]> 
         typeof item.space !== "string" ||
         item.space.trim() === "" ||
         typeof item.studioName !== "string" ||
-        item.studioName.trim() === ""
+        item.studioName.trim() === "" ||
+        registrationOpensAt === undefined ||
+        registrationClosesAt === undefined ||
+        typeof item.isBookable !== "boolean" ||
+        !["coming_soon", "open", "sold_out", "closed"].includes(
+          String(item.salesStatus),
+        )
       ) {
         throw new Error("[events] Data sesi publik tidak sesuai kontrak.");
       }
@@ -87,11 +115,20 @@ export async function fetchPublicBookingEvents(): Promise<PublicBookingEvent[]> 
         seatsLeft: item.seatsLeft,
         studioSlug: item.space,
         studioName: item.studioName,
+        registrationOpensAt,
+        registrationClosesAt,
+        isBookable: item.isBookable,
+        salesStatus: item.salesStatus as PublicBookingSession["salesStatus"],
       };
     });
 
-    return { slug: event.slug, title: event.title, sessions };
-  });
+    return {
+      slug: event.slug,
+      title: event.title,
+      status: event.status as PublicBookingEvent["status"],
+      sessions,
+    };
+  }).filter((event) => event.status !== "closed");
 }
 
 export async function fetchPublicSessionAvailability(): Promise<PublicSessionAvailability[]> {

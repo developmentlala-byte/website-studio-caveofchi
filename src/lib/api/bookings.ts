@@ -3,7 +3,6 @@ const API_URL = import.meta.env.PUBLIC_API_URL?.replace(/\/+$/, "");
 export interface BookingInput {
   sessionId: string;
   name: string;
-  email: string;
   whatsapp: string;
   quantity: number;
   idempotencyKey: string;
@@ -84,7 +83,6 @@ export async function createBooking(input: BookingInput): Promise<BookingResult>
     body: JSON.stringify({
       session_id: input.sessionId,
       customer_name: input.name,
-      customer_email: input.email,
       customer_phone: input.whatsapp,
       quantity: input.quantity,
       idempotency_key: input.idempotencyKey,

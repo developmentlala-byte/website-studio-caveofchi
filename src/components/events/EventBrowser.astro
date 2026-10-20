@@ -35,8 +35,13 @@ const { events, studios, showIntro = true } = Astro.props;
   <div class="event-grid">
     {events.map((event) => <EventCard event={event} />)}
   </div>
+  <nav class="event-pagination" aria-label="Navigasi halaman event" data-event-pagination hidden>
+    <button type="button" data-event-previous>Sebelumnya</button>
+    <span data-event-page aria-live="polite"></span>
+    <button type="button" data-event-next>Berikutnya</button>
+  </nav>
   <p class="empty-state" data-empty hidden={events.length > 0}>
-    Belum ada event publik mendatang dari sistem.
+    Belum ada event yang tersedia.
   </p>
 </div>
 
@@ -129,6 +134,42 @@ const { events, studios, showIntro = true } = Astro.props;
     text-align: center;
   }
 
+  .event-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin: 26px auto 0;
+    color: var(--umber);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+
+  .event-pagination[hidden] {
+    display: none;
+  }
+
+  .event-pagination button {
+    padding: 12px 20px;
+    border: 1px solid var(--umber);
+    background: transparent;
+    color: var(--umber);
+    cursor: pointer;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .event-pagination button:hover:not(:disabled) {
+    background: var(--umber);
+    color: var(--paper-light);
+  }
+
+  .event-pagination button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
   @media (max-width: 900px) {
     .event-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -167,7 +208,14 @@ const { events, studios, showIntro = true } = Astro.props;
     const studioButtons = root.querySelectorAll<HTMLButtonElement>('[data-studio-filter]');
     const cards = root.querySelectorAll<HTMLElement>('[data-event-card]');
     const empty = root.querySelector<HTMLElement>('[data-empty]');
+    const pagination = root.querySelector<HTMLElement>('[data-event-pagination]');
+    const previousButton = root.querySelector<HTMLButtonElement>('[data-event-previous]');
+    const nextButton = root.querySelector<HTMLButtonElement>('[data-event-next]');
+    const pageLabel = root.querySelector<HTMLElement>('[data-event-page]');
+    const pageSize = 6;
+    let currentPage = 1;
     let selectedStudio = 'all';
+    const unavailableEventSlugs = new Set<string>();
 
     type CardSession = {
       sessionId: string;
@@ -177,6 +225,9 @@ const { events, studios, showIntro = true } = Astro.props;
       seatsLeft: number;
       studioSlug: string;
       studioName: string;
+      registrationOpensAt: string | null;
+      isBookable: boolean;
+      salesStatus: 'coming_soon' | 'open' | 'sold_out' | 'closed';
     };
 
     const isCardSession = (value: unknown): value is CardSession =>
@@ -196,7 +247,13 @@ const { events, studios, showIntro = true } = Astro.props;
       'studioSlug' in value &&
       typeof value.studioSlug === 'string' &&
       'studioName' in value &&
-      typeof value.studioName === 'string';
+      typeof value.studioName === 'string' &&
+      'registrationOpensAt' in value &&
+      (value.registrationOpensAt === null || typeof value.registrationOpensAt === 'string') &&
+      'isBookable' in value &&
+      typeof value.isBookable === 'boolean' &&
+      'salesStatus' in value &&
+      ['coming_soon', 'open', 'sold_out', 'closed'].includes(String(value.salesStatus));
 
     const readSessions = (card: HTMLElement): CardSession[] => {
       try {
@@ -239,57 +296,115 @@ const { events, studios, showIntro = true } = Astro.props;
     const formatIDR = (price: number) =>
       `Rp ${new Intl.NumberFormat('id-ID').format(price)}`;
 
+    const formatSalesStatus = (session: CardSession) => {
+      if (session.salesStatus === 'coming_soon') {
+        return session.registrationOpensAt
+          ? `Dibuka ${formatSessionDate(session.registrationOpensAt).split(' · ')[0]}`
+          : 'Segera dibuka';
+      }
+      if (session.salesStatus === 'sold_out') return 'Kuota habis';
+      if (session.salesStatus === 'closed') return 'Pendaftaran ditutup';
+      return `Sisa ${session.seatsLeft} kursi`;
+    };
+
     const renderCard = (card: HTMLElement) => {
       const sessions = readSessions(card);
-      const filteredSessions = sessions.filter(
-        (session) => selectedStudio === 'all' || session.studioSlug === selectedStudio,
-      );
-      card.hidden = filteredSessions.length === 0;
-      if (card.hidden) return false;
-
-      const closestSession =
-        filteredSessions.find((session) => session.seatsLeft > 0) ?? filteredSessions[0];
-      if (!closestSession) return false;
-
       const studio = card.querySelector<HTMLElement>('[data-featured-studio]');
       const date = card.querySelector<HTMLElement>('[data-featured-date]');
       const seats = card.querySelector<HTMLElement>('[data-featured-seats]');
       const price = card.querySelector<HTMLElement>('[data-featured-price]');
+
+      if (sessions.length === 0) {
+        if (selectedStudio !== 'all') return false;
+        if (studio) studio.textContent = 'Jadwal segera hadir';
+        if (date) date.textContent = 'Tanggal segera diumumkan';
+        if (seats) seats.textContent = 'Jadwal segera hadir';
+        if (price) price.textContent = 'Segera diumumkan';
+        return true;
+      }
+
+      const filteredSessions = sessions.filter(
+        (session) => selectedStudio === 'all' || session.studioSlug === selectedStudio,
+      );
+      if (filteredSessions.length === 0) return false;
+
+      const closestSession =
+        filteredSessions.find((session) => session.isBookable && session.seatsLeft > 0) ??
+        filteredSessions.find((session) => session.salesStatus === 'coming_soon') ??
+        filteredSessions[0];
+      if (!closestSession) {
+        return false;
+      }
+
       const button = card.querySelector<HTMLButtonElement>('[data-book]');
       if (studio) {
         studio.textContent =
           `${closestSession.studioName} · ${formatDuration(closestSession.durationMinutes)}`;
       }
       if (date) date.textContent = formatSessionDate(closestSession.startsAt);
-      if (seats) seats.textContent = `Sisa ${closestSession.seatsLeft} kursi`;
+      if (seats) seats.textContent = formatSalesStatus(closestSession);
       if (price) price.textContent = formatIDR(closestSession.price);
       if (button) {
-        const soldOut = closestSession.seatsLeft <= 0;
+        const soldOut = closestSession.salesStatus === 'sold_out' || closestSession.seatsLeft <= 0;
+        const isBookable = closestSession.isBookable && !soldOut;
         button.dataset.sessionId = closestSession.sessionId;
         button.dataset.studioSlug = closestSession.studioSlug;
         button.dataset.price = String(closestSession.price);
         button.dataset.seats = String(closestSession.seatsLeft);
-        button.disabled = soldOut;
-        button.textContent = soldOut ? 'Kuota habis' : 'Reserve seat ↗';
+        button.dataset.bookable = String(isBookable);
+        button.disabled = !isBookable;
+        button.textContent = isBookable
+          ? 'Pesan sekarang ↗'
+          : soldOut
+            ? 'Kuota habis'
+            : closestSession.salesStatus === 'coming_soon'
+              ? 'Segera dibuka'
+              : 'Pendaftaran ditutup';
       }
       return true;
     };
 
     const filterCards = () => {
-      let visibleCards = 0;
+      const matchingCards = [...cards].filter((card) => {
+        const matchesFilter =
+          !unavailableEventSlugs.has(card.dataset.eventSlug ?? '') && renderCard(card);
+        return matchesFilter;
+      });
+      const pageCount = Math.max(1, Math.ceil(matchingCards.length / pageSize));
+      currentPage = Math.min(currentPage, pageCount);
+      const start = (currentPage - 1) * pageSize;
+      const visibleCards = new Set(matchingCards.slice(start, start + pageSize));
+
       cards.forEach((card) => {
-        if (renderCard(card)) visibleCards++;
+        card.hidden = !visibleCards.has(card);
       });
 
+      if (pagination && previousButton && nextButton && pageLabel) {
+        pagination.hidden = matchingCards.length <= pageSize;
+        previousButton.disabled = currentPage <= 1;
+        nextButton.disabled = currentPage >= pageCount;
+        pageLabel.textContent = `Halaman ${currentPage} dari ${pageCount}`;
+      }
+
       if (empty) {
-        empty.hidden = visibleCards > 0;
-        if (visibleCards === 0 && selectedStudio !== 'all') {
+        empty.hidden = matchingCards.length > 0;
+        if (matchingCards.length === 0 && selectedStudio !== 'all') {
           empty.textContent = 'Tidak ada event yang sesuai dengan filter yang dipilih.';
-        } else if (visibleCards === 0) {
-          empty.textContent = 'Belum ada event publik mendatang dari sistem.';
+        } else if (matchingCards.length === 0) {
+          empty.textContent = 'Belum ada event yang tersedia.';
         }
       }
     };
+
+    previousButton?.addEventListener('click', () => {
+      if (currentPage <= 1) return;
+      currentPage--;
+      filterCards();
+    });
+    nextButton?.addEventListener('click', () => {
+      currentPage++;
+      filterCards();
+    });
 
     document.addEventListener('booking-events-updated', (event) => {
       if (!(event instanceof CustomEvent) || !Array.isArray(event.detail)) {
@@ -316,13 +431,17 @@ const { events, studios, showIntro = true } = Astro.props;
       }
 
       cards.forEach((card) => {
-        const eventData = sessionsBySlug.get(card.dataset.eventSlug ?? '');
-        card.dataset.sessions = JSON.stringify(eventData?.sessions ?? []);
-        if (eventData) {
-          card.dataset.eventTitle = eventData.title;
-          const title = card.querySelector<HTMLAnchorElement>('h3 a');
-          if (title) title.textContent = eventData.title;
+        const slug = card.dataset.eventSlug ?? '';
+        const eventData = sessionsBySlug.get(slug);
+        if (!eventData) {
+          unavailableEventSlugs.add(slug);
+          return;
         }
+        unavailableEventSlugs.delete(slug);
+        card.dataset.sessions = JSON.stringify(eventData.sessions);
+        card.dataset.eventTitle = eventData.title;
+        const title = card.querySelector<HTMLAnchorElement>('h3 a');
+        if (title) title.textContent = eventData.title;
       });
       filterCards();
     });
@@ -330,6 +449,7 @@ const { events, studios, showIntro = true } = Astro.props;
     studioButtons.forEach((button) =>
       button.addEventListener('click', () => {
         selectedStudio = button.dataset.studioFilter ?? 'all';
+        currentPage = 1;
         studioButtons.forEach((item) => {
           const active = item === button;
           item.classList.toggle('active', active);
@@ -338,5 +458,7 @@ const { events, studios, showIntro = true } = Astro.props;
         filterCards();
       }),
     );
+
+    filterCards();
   });
 </script>

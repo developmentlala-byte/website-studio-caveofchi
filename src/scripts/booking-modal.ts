@@ -8,6 +8,16 @@ import { formatIDR } from "@/lib/format";
 
 const dialog = document.querySelector<HTMLDialogElement>("#booking-dialog");
 
+function formatDate(value: string): string {
+  return new Intl.DateTimeFormat("id-ID", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Jakarta",
+  }).format(new Date(value));
+}
+
 let refreshingAvailability = false;
 
 const refreshSessionAvailability = async () => {
@@ -22,13 +32,20 @@ const refreshSessionAvailability = async () => {
           `[data-book][data-session-id="${session.sessionId}"]`,
         )
         .forEach((button) => {
-          const previousSeats = Number(button.dataset.seats);
           button.dataset.seats = String(session.seatsLeft);
-          button.disabled = session.seatsLeft === 0;
-          if (session.seatsLeft === 0) {
+          button.dataset.bookable = String(session.isBookable);
+          button.disabled = session.seatsLeft === 0 || !session.isBookable;
+          if (session.salesStatus === "sold_out" || session.seatsLeft === 0) {
             button.textContent = "Kuota habis";
-          } else if (previousSeats === 0) {
-            button.textContent = button.dataset.availableLabel ?? "Pesan ↗";
+          } else if (session.salesStatus === "coming_soon") {
+            button.textContent = session.registrationOpensAt
+              ? `Dibuka ${formatDate(session.registrationOpensAt)}`
+              : "Segera dibuka";
+          } else if (session.salesStatus === "closed") {
+            button.textContent = "Pendaftaran ditutup";
+          } else if (session.isBookable) {
+            button.textContent =
+              button.dataset.availableLabel ?? "Pesan sekarang ↗";
           }
         });
       document
@@ -36,7 +53,16 @@ const refreshSessionAvailability = async () => {
           `[data-seats-left="${session.sessionId}"]`,
         )
         .forEach((label) => {
-          label.textContent = `Sisa ${session.seatsLeft} kursi`;
+          label.textContent =
+            session.salesStatus === "sold_out" || session.seatsLeft === 0
+              ? "Kuota habis"
+              : session.salesStatus === "coming_soon"
+                ? session.registrationOpensAt
+                  ? `Dibuka ${formatDate(session.registrationOpensAt)}`
+                  : "Segera dibuka"
+                : session.salesStatus === "closed"
+                  ? "Pendaftaran ditutup"
+                  : `Sisa ${session.seatsLeft} kursi`;
         });
     }
     document.dispatchEvent(
@@ -61,6 +87,18 @@ if (dialog) {
   const form = dialog.querySelector<HTMLFormElement>("[data-form]")!;
   const eventSearch = dialog.querySelector<HTMLInputElement>("[data-event-search]")!;
   const eventList = dialog.querySelector<HTMLElement>("[data-events]")!;
+  const eventPagination = dialog.querySelector<HTMLElement>(
+    "[data-event-pagination]",
+  )!;
+  const eventPrevious = dialog.querySelector<HTMLButtonElement>(
+    "[data-event-previous]",
+  )!;
+  const eventNext = dialog.querySelector<HTMLButtonElement>(
+    "[data-event-next]",
+  )!;
+  const eventPageLabel = dialog.querySelector<HTMLElement>(
+    "[data-event-page]",
+  )!;
   const eventsStatus = dialog.querySelector<HTMLElement>("[data-events-status]")!;
   const retryButton = dialog.querySelector<HTMLButtonElement>("[data-retry]")!;
   const sessionList = dialog.querySelector<HTMLElement>("[data-sessions]")!;
@@ -75,6 +113,8 @@ if (dialog) {
 
   let events: PublicBookingEvent[] = [];
   let currentEventSlug = "";
+  let currentEventPage = 1;
+  const eventPageSize = 5;
   let currentSessionId = "";
   let triggerEventSlug = "";
   let triggerStudioSlug = "";
@@ -103,10 +143,12 @@ if (dialog) {
     ) ?? null;
 
   const bookableSessions = (event: PublicBookingEvent) =>
-    event.sessions.filter((session) => session.seatsLeft > 0);
+    event.sessions.filter(
+      (session) => session.isBookable && session.seatsLeft > 0,
+    );
 
   const selectFirstBookableSession = (event: PublicBookingEvent) => {
-    const session = bookableSessions(event)[0] ?? event.sessions[0] ?? null;
+    const session = bookableSessions(event)[0] ?? null;
     currentSessionId = session?.sessionId ?? "";
     quantity = 1;
   };
@@ -118,8 +160,14 @@ if (dialog) {
 
   const renderEvents = () => {
     const needle = eventSearch.value.trim().toLocaleLowerCase("id-ID");
-    const visibleEvents = events.filter((event) =>
+    const matchingEvents = events.filter((event) =>
       `${event.title} ${event.slug}`.toLocaleLowerCase("id-ID").includes(needle),
+    );
+    const pageCount = Math.max(1, Math.ceil(matchingEvents.length / eventPageSize));
+    currentEventPage = Math.min(currentEventPage, pageCount);
+    const visibleEvents = matchingEvents.slice(
+      (currentEventPage - 1) * eventPageSize,
+      currentEventPage * eventPageSize,
     );
     eventList.replaceChildren();
     for (const event of visibleEvents) {
@@ -141,13 +189,42 @@ if (dialog) {
       eventList.append(button);
     }
 
-    if (events.length > 0 && visibleEvents.length === 0) {
+    eventPagination.hidden = matchingEvents.length <= eventPageSize;
+    eventPrevious.disabled = currentEventPage <= 1 || isLoadingEvents;
+    eventNext.disabled = currentEventPage >= pageCount || isLoadingEvents;
+    eventPageLabel.textContent = `Halaman ${currentEventPage} dari ${pageCount}`;
+
+    if (events.length > 0 && matchingEvents.length === 0) {
       eventsStatus.textContent = "Event tidak ditemukan.";
+      eventsStatus.hidden = false;
+    } else if (events.length === 0) {
+      eventsStatus.textContent = "Belum ada event yang tersedia.";
       eventsStatus.hidden = false;
     } else {
       eventsStatus.hidden = true;
     }
   };
+
+  eventSearch.addEventListener("input", () => {
+    currentEventPage = 1;
+    renderEvents();
+  });
+  eventPrevious.addEventListener("click", () => {
+    if (currentEventPage <= 1) return;
+    currentEventPage -= 1;
+    renderEvents();
+  });
+  eventNext.addEventListener("click", () => {
+    const needle = eventSearch.value.trim().toLocaleLowerCase("id-ID");
+    const pageCount = Math.ceil(
+      events.filter((event) =>
+        `${event.title} ${event.slug}`.toLocaleLowerCase("id-ID").includes(needle),
+      ).length / eventPageSize,
+    );
+    if (currentEventPage >= pageCount) return;
+    currentEventPage += 1;
+    renderEvents();
+  });
 
   const renderSelections = () => {
     const event = selectedEvent();
@@ -163,10 +240,25 @@ if (dialog) {
     const sessions = [...event.sessions].sort(
       (a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt),
     );
-    const availableCount = sessions.filter((session) => session.seatsLeft > 0).length;
-    sessionCount.textContent = `${availableCount} tersedia${
-      sessions.length > availableCount ? ` · ${sessions.length - availableCount} penuh` : ""
-    }`;
+    const availableCount = sessions.filter(
+      (session) => session.isBookable && session.seatsLeft > 0,
+    ).length;
+    const comingSoonCount = sessions.filter(
+      (session) => session.salesStatus === "coming_soon",
+    ).length;
+    const closedCount = sessions.filter(
+      (session) => session.salesStatus === "closed",
+    ).length;
+    sessionCount.textContent = sessions.length === 0
+      ? "Jadwal menyusul"
+      : [
+          availableCount > 0 ? `${availableCount} dapat dipesan` : "",
+          comingSoonCount > 0 ? `${comingSoonCount} segera dibuka` : "",
+          sessions.some((session) => session.salesStatus === "sold_out")
+            ? "beberapa kuota habis"
+            : "",
+          closedCount > 0 ? `${closedCount} pendaftaran ditutup` : "",
+        ].filter(Boolean).join(" · ");
 
     for (const session of sessions) {
       const button = document.createElement("button");
@@ -177,7 +269,8 @@ if (dialog) {
         "aria-selected",
         String(session.sessionId === currentSessionId),
       );
-      button.disabled = session.seatsLeft === 0;
+      button.disabled =
+        session.seatsLeft === 0 || !session.isBookable;
 
       const date = document.createElement("span");
       date.className = "session-meta";
@@ -191,11 +284,18 @@ if (dialog) {
       const price = document.createElement("span");
       price.textContent = formatIDR(session.price);
       const seats = document.createElement("span");
-      seats.className = session.seatsLeft === 0 ? "sold-out" : "";
+      seats.className =
+        session.salesStatus === "sold_out" ? "sold-out" : "";
       seats.textContent =
-        session.seatsLeft === 0
-          ? "Penuh · 0 slot"
-          : `Sisa ${session.seatsLeft} slot`;
+        session.salesStatus === "sold_out" || session.seatsLeft === 0
+          ? "Kuota habis"
+          : session.salesStatus === "coming_soon"
+            ? session.registrationOpensAt
+              ? `Penjualan dibuka ${formatDate(session.registrationOpensAt)}`
+              : "Penjualan segera dibuka"
+            : session.salesStatus === "closed"
+              ? "Pendaftaran ditutup"
+              : `Sisa ${session.seatsLeft} slot`;
       bottom.append(price, seats);
       button.append(name, date, bottom);
       button.addEventListener("click", () => {
@@ -210,7 +310,7 @@ if (dialog) {
     if (sessions.length === 0) {
       const empty = document.createElement("p");
       empty.className = "load-message";
-      empty.textContent = "Tidak ada sesi untuk event ini.";
+      empty.textContent = "Jadwal sesi segera diumumkan.";
       sessionList.append(empty);
     }
     renderTotals();
@@ -220,15 +320,6 @@ if (dialog) {
     const session = selectedSession();
     return session ? Math.min(20, session.seatsLeft) : 0;
   };
-
-  const formatDate = (value: string) =>
-    new Intl.DateTimeFormat("id-ID", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      timeZone: "Asia/Jakarta",
-    }).format(new Date(value));
 
   const formatTime = (value: string) =>
     new Intl.DateTimeFormat("id-ID", {
@@ -275,7 +366,6 @@ if (dialog) {
   const canContinue = () => {
     const session = selectedSession();
     const name = form.elements.namedItem("name") as HTMLInputElement;
-    const email = form.elements.namedItem("email") as HTMLInputElement;
     phoneInput.setCustomValidity(
       phoneInput.value.trim() &&
         !/^\+?[0-9][0-9\s().-]{7,29}$/.test(phoneInput.value.trim())
@@ -285,10 +375,10 @@ if (dialog) {
     return Boolean(
       !isLoadingEvents &&
         session &&
+        session.isBookable &&
         session.seatsLeft > 0 &&
         name.value.trim().length > 0 &&
         name.value.trim().length <= 150 &&
-        email.validity.valid &&
         phoneInput.validity.valid &&
         quantityInput.validity.valid &&
         Number(quantityInput.value) === quantity &&
@@ -304,14 +394,12 @@ if (dialog) {
     if (!event || !session) return;
 
     const name = form.elements.namedItem("name") as HTMLInputElement;
-    const email = form.elements.namedItem("email") as HTMLInputElement;
     const phone = form.elements.namedItem("phone") as HTMLInputElement;
     bind("event-name", event.title);
     bind("studio-name", session.studioName);
     bind("session-date", formatDate(session.startsAt));
     bind("session-time", formatTimeRange(session));
     bind("customer-name", name.value.trim());
-    bind("customer-email", email.value.trim());
     bind("customer-phone", phone.value.trim());
     bind("quantity", `${quantity} slot${quantity === 1 ? "" : "s"}`);
     bind("confirm-unit-price", formatIDR(session.price));
@@ -362,6 +450,7 @@ if (dialog) {
     nextButton.disabled = true;
     try {
       events = await fetchPublicBookingEvents();
+      currentEventPage = 1;
       if (triggerEventSlug) {
         const event = events.find((item) => item.slug === triggerEventSlug);
         if (!event) {
@@ -369,21 +458,27 @@ if (dialog) {
         }
 
         currentEventSlug = event.slug;
+        const eventIndex = events.findIndex((item) => item.slug === event.slug);
+        currentEventPage = Math.floor(eventIndex / eventPageSize) + 1;
         const triggerSession = event.sessions.find(
           (session) => session.sessionId === triggerSessionId,
         );
         const defaultSession =
-          triggerSession && triggerSession.seatsLeft > 0
+          triggerSession && triggerSession.isBookable && triggerSession.seatsLeft > 0
             ? triggerSession
             : bookableSessions(event).find(
                 (session) => session.studioSlug === triggerStudioSlug,
-              ) ?? bookableSessions(event)[0] ?? triggerSession ?? null;
+              ) ?? bookableSessions(event)[0] ?? null;
         currentSessionId = defaultSession?.sessionId ?? "";
-        if (triggerSession && triggerSession.seatsLeft === 0) {
+        if (triggerSession && !triggerSession.isBookable) {
           eventsStatus.textContent =
-            "Sesi yang dipilih sudah penuh. Silakan pilih sesi lain.";
+            triggerSession.salesStatus === "coming_soon"
+              ? "Penjualan sesi ini belum dibuka."
+              : triggerSession.salesStatus === "sold_out"
+                ? "Sesi yang dipilih sudah penuh. Silakan pilih sesi lain."
+                : "Pendaftaran sesi ini sudah ditutup.";
         }
-        eventsStatus.hidden = !triggerSession || triggerSession.seatsLeft > 0;
+        eventsStatus.hidden = !triggerSession || triggerSession.isBookable;
       }
       renderSelections();
     } catch (error) {
@@ -391,6 +486,7 @@ if (dialog) {
       events = [];
       currentEventSlug = "";
       currentSessionId = "";
+      currentEventPage = 1;
       eventsStatus.textContent =
         error instanceof Error
           ? error.message
@@ -400,6 +496,15 @@ if (dialog) {
       renderSelections();
     } finally {
       isLoadingEvents = false;
+      eventPrevious.disabled = currentEventPage <= 1;
+      const currentNeedle = eventSearch.value.trim().toLocaleLowerCase("id-ID");
+      const matchingEventCount = events.filter((event) =>
+        `${event.title} ${event.slug}`
+          .toLocaleLowerCase("id-ID")
+          .includes(currentNeedle),
+      ).length;
+      eventNext.disabled =
+        currentEventPage >= Math.ceil(matchingEventCount / eventPageSize);
       renderTotals();
     }
   };
@@ -415,12 +520,10 @@ if (dialog) {
     if (!session || !canContinue() || isSubmitting) return;
 
     const name = form.elements.namedItem("name") as HTMLInputElement;
-    const email = form.elements.namedItem("email") as HTMLInputElement;
     const phone = form.elements.namedItem("phone") as HTMLInputElement;
     const attempt = JSON.stringify([
       session.sessionId,
       name.value.trim(),
-      email.value.trim(),
       phone.value.trim(),
       quantity,
     ]);
@@ -439,7 +542,6 @@ if (dialog) {
       const result = await createBooking({
         sessionId: session.sessionId,
         name: name.value.trim(),
-        email: email.value.trim(),
         whatsapp: phone.value.trim(),
         quantity,
         idempotencyKey,

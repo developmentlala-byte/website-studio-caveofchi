@@ -3,24 +3,21 @@ import type { CaveEvent } from '@/lib/events';
 import { formatDateShort, formatTime } from '@/lib/format';
 
 type EventSession = CaveEvent['data']['sessions'][number];
-interface Props { event: CaveEvent; variant?: 'solid' | 'outline'; session?: EventSession }
+interface Props { event: CaveEvent; variant?: 'solid' | 'outline'; session: EventSession }
 const { event, variant = 'solid', session } = Astro.props;
 const d = event.data;
-const sessionId = session?.sessionId ?? d.eventId;
-const startsAt = session?.startsAt ?? d.startsAt;
-const price = session?.price ?? d.price;
-const seatsLeft = session?.seatsLeft ?? d.seatsLeft;
-const soldOut = seatsLeft <= 0;
-const meta = `${session?.studioName ?? d.studioName} · ${formatDateShort(startsAt)} · ${formatTime(startsAt)} WIB`;
+const soldOut = session.seatsLeft <= 0;
+const meta = `${session.studioName} · ${formatDateShort(session.startsAt)} · ${formatTime(session.startsAt)} WIB`;
 ---
 <button type="button" class:list={['book', variant]} data-book
-  data-session-id={sessionId} data-event-slug={event.id}
-  data-studio-slug={session?.space ?? d.space}
+  data-session-id={session.sessionId} data-event-slug={event.id}
+  data-studio-slug={session.space}
   data-title={d.title} data-meta={meta}
-  data-price={price} data-seats={seatsLeft}
-  data-available-label={variant === 'outline' ? 'Book ↗' : 'Reserve seat ↗'}
-  disabled={soldOut}>
-  {soldOut ? 'Kuota habis' : <slot>Reserve seat ↗</slot>}
+  data-price={session.price} data-seats={session.seatsLeft}
+  data-bookable={session.isBookable}
+  data-available-label={variant === 'outline' ? 'Book ↗' : 'Pesan sekarang ↗'}
+  disabled={soldOut || !session.isBookable}>
+  {soldOut ? 'Kuota habis' : <slot>Pesan sekarang ↗</slot>}
 </button>
 <style>
   .book {
