@@ -2,9 +2,15 @@ import { z } from "astro/zod";
 import { fetchEvents } from "@/lib/api/events";
 import { dayKey } from "@/lib/format";
 
+const publicAssetUrlSchema = z.union([
+  z.url({ protocol: /^https?$/ }),
+  z.string().regex(/^\/asset-proxy\/storage\/[^?#]+(?:\?[^#]*)?$/),
+]);
+
 const eventDataSchema = z.object({
   eventId: z.string().nullable().optional(),
   slug: z.string(),
+  sortOrder: z.number().int().nonnegative().default(0),
   title: z.string(),
   subtitle: z.string(),
   description: z.string().optional(),
@@ -16,9 +22,9 @@ const eventDataSchema = z.object({
   durationMinutes: z.number().int().positive().nullable().optional(),
   capacity: z.number().int().positive().nullable().optional(),
   seatsLeft: z.number().int().nonnegative().nullable().optional(),
-  imageUrl: z.url({ protocol: /^https?$/ }).optional(),
+  imageUrl: publicAssetUrlSchema.optional(),
   images: z.array(z.object({
-    url: z.url({ protocol: /^https?$/ }),
+    url: publicAssetUrlSchema,
     altText: z.string().nullable(),
     sortOrder: z.number().int().nonnegative(),
   })).default([]),
@@ -48,6 +54,9 @@ const byDate = (a: CaveEvent, b: CaveEvent) =>
   (a.data.sessions[0]?.startsAt.getTime() ?? Number.POSITIVE_INFINITY) -
   (b.data.sessions[0]?.startsAt.getTime() ?? Number.POSITIVE_INFINITY);
 
+const byWebsiteOrder = (a: CaveEvent, b: CaveEvent) =>
+  a.data.sortOrder - b.data.sortOrder || byDate(a, b);
+
 export async function getUpcomingEvents(limit?: number) {
   const now = Date.now();
   const all = (await fetchEvents())
@@ -59,7 +68,7 @@ export async function getUpcomingEvents(limit?: number) {
       return { id: data.slug, data };
     })
     .filter((event) => event.data.sessions.length > 0 || !event.data.startsAt);
-  const sorted = all.sort(byDate);
+  const sorted = all.sort(byWebsiteOrder);
   return limit === undefined ? sorted : sorted.slice(0, Math.max(0, limit));
 }
 
