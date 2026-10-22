@@ -14,7 +14,7 @@ const isCurrent = (href: string) =>
     {NAV_LINKS.map((l) => (
       <a href={l.href} aria-current={isCurrent(l.href) ? 'page' : undefined}>{l.label}</a>
     ))}
-    <a class="nav-book" href="/experiences" data-book>Book an experience ↗</a>
+    <a class="nav-book" href="/experiences" data-book>Pesan tempat ↗</a>
   </nav>
   <button class="menu-btn" type="button" aria-label="Buka navigasi"
           aria-expanded="false" aria-controls="site-nav">☰</button>

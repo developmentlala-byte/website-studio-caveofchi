@@ -21,7 +21,7 @@ npm run preview
 
 ## Konfigurasi sebelum deploy
 
-- Isi `SITE_URL` dengan origin situs produksi, misalnya `https://domain-kamu.com`. Sitemap dibuat hanya jika URL tersebut diatur.
+- Isi `SITE_URL` dengan origin situs produksi yang kanonis, misalnya `https://domain-kamu.com` (tanpa path atau trailing slash). Nilai ini dipakai untuk canonical URL, metadata sosial, data terstruktur, dan sitemap; tanpa konfigurasi, halaman memakai origin request.
 - Isi `PUBLIC_API_URL` dengan URL root API (termasuk prefix `/api`, tanpa trailing slash). Website mengambil data event dari `/public/events` dan studio aktif dari `/public/studios`; kedua endpoint tidak memerlukan token.
 - Di environment Production Vercel, isi `PUBLIC_API_URL` dengan backend production, misalnya `https://design.langitlangit.id/backend/api`, bukan URL `localhost` atau tunnel ngrok. Gambar yang sementara dikembalikan API dengan host `localhost` atau ngrok dilayani melalui route proxy same-origin `/asset-proxy/`; ini membantu saat development, tetapi bukan pengganti konfigurasi endpoint production.
 - FE memakai endpoint terpisah dari website: atur `NUXT_PUBLIC_API_BASE` di environment FE dan `PUBLIC_API_URL` di environment website. Mengubah `.env` lokal memerlukan restart dev server; perubahan environment production memerlukan build/deploy ulang.

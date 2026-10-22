@@ -1,4 +1,6 @@
 ---
+import '@fontsource-variable/cormorant-garamond';
+import '@fontsource-variable/dm-sans';
 import '@/styles/global.css';
 import '@/styles/typography.css';
 
@@ -6,6 +8,8 @@ import AnnouncementBar from '@/components/layout/AnnouncementBar.astro';
 import SiteHeader from '@/components/layout/SiteHeader.astro';
 import SiteFooter from '@/components/layout/SiteFooter.astro';
 import BookingModal from '@/components/booking/BookingModal.astro';
+import logo from '@/assets/images/logo-cave-of-chi.png';
+import { SITE } from '@/lib/site';
 
 interface Props {
   title: string;
@@ -15,12 +19,49 @@ interface Props {
   noindex?: boolean;
 }
 const {
-  title, description, ogImage = '/og-default.svg',
+  title, description, ogImage = '/og-default.png',
   headerVariant = 'solid', noindex = false,
 } = Astro.props;
 
-const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site) : null;
-const ogUrl = Astro.site ? new URL(ogImage, Astro.site) : null;
+const siteOrigin = Astro.site ?? new URL(Astro.url.origin);
+const canonicalPath = Astro.url.pathname.replace(/\/+$/, '') || '/';
+const canonical = new URL(canonicalPath, siteOrigin);
+const ogUrl = new URL(ogImage, siteOrigin);
+const siteUrl = new URL('/', siteOrigin).toString();
+const organizationId = new URL('/#organization', siteOrigin).toString();
+const websiteId = new URL('/#website', siteOrigin).toString();
+const webpageId = new URL(`${canonical.pathname}#webpage`, siteOrigin).toString();
+const structuredData = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': organizationId,
+      name: 'Cave of Chi',
+      url: siteUrl,
+      logo: new URL(logo.src, siteOrigin).toString(),
+      description: SITE.description,
+    },
+    {
+      '@type': 'WebSite',
+      '@id': websiteId,
+      url: siteUrl,
+      name: 'Cave of Chi',
+      inLanguage: 'id-ID',
+      publisher: { '@id': organizationId },
+    },
+    {
+      '@type': 'WebPage',
+      '@id': webpageId,
+      url: canonical.toString(),
+      name: title,
+      description,
+      inLanguage: 'id-ID',
+      isPartOf: { '@id': websiteId },
+      about: { '@id': organizationId },
+    },
+  ],
+}).replaceAll('<', '\\u003c');
 ---
 <!doctype html>
 <html lang="id">
@@ -28,23 +69,28 @@ const ogUrl = Astro.site ? new URL(ogImage, Astro.site) : null;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f7f1ea" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400..700;1,400..700&family=DM+Sans:wght@400..700&display=swap"
-      rel="stylesheet"
-    />
+    <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large'} />
     <title>{title}</title>
     <meta name="description" content={description} />
-    {canonical && <link rel="canonical" href={canonical} />}
+    <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    {noindex && <meta name="robots" content="noindex" />}
     <meta property="og:type" content="website" />
+    <meta property="og:locale" content="id_ID" />
+    <meta property="og:site_name" content="Cave of Chi" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    {canonical && <meta property="og:url" content={canonical} />}
-    {ogUrl && <meta property="og:image" content={ogUrl} />}
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogUrl} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:alt" content="Cave of Chi — Art. Space. Energy." />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogUrl} />
+    <meta name="twitter:image:alt" content="Cave of Chi — Art. Space. Energy." />
+    <script type="application/ld+json" set:html={structuredData} />
     <slot name="head" />
   </head>
   <body>

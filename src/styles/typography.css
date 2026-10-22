@@ -1,8 +1,8 @@
 /* Import SETELAH global.css */
 
 :root {
-  --font-heading: "Cormorant Garamond", Georgia, serif;
-  --font-body: "DM Sans", Arial, sans-serif;
+  --font-heading: "Cormorant Garamond Variable", Georgia, serif;
+  --font-body: "DM Sans Variable", Arial, sans-serif;
 
   /* weight */
   --fw-display: 500; /* h1, h2, italic aksen */
@@ -33,11 +33,6 @@
 }
 
 html {
-  /* jangan pernah bikin bold/italic palsu */
-  font-synthesis: none;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
   font-optical-sizing: auto;
 }
 
@@ -61,11 +56,6 @@ h3,
 h4,
 .heading {
   font-family: var(--font-heading);
-  font-variant-numeric: lining-nums;
-  font-feature-settings:
-    "lnum" 1,
-    "kern" 1;
-  text-wrap: balance;
 }
 
 /* Heading: Cormorant Garamond 102px / 500 / 99px / -5.61px */
@@ -107,8 +97,4 @@ h2 em {
   letter-spacing: 0.1em;
   line-height: normal;
   text-transform: uppercase;
-}
-
-p {
-  text-wrap: pretty;
 }

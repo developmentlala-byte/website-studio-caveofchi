@@ -5,8 +5,6 @@ import { getUpcomingEvents } from "@/lib/events";
 const PUBLIC_ROUTES = [
   "/",
   "/about",
-  "/booking/after-payment",
-  "/booking/status",
   "/experiences",
   "/faq",
   "/schedule",

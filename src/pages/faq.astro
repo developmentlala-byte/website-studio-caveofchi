@@ -2,11 +2,25 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import FaqList from "@/components/faq/FaqList.astro";
 import PageHeader from "@/components/layout/PageHeader.astro";
+import { FAQ } from "@/data/faq";
+
+const faqJsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQ.map((item) => ({
+    "@type": "Question",
+    name: item.q,
+    acceptedAnswer: { "@type": "Answer", text: item.a },
+  })),
+}).replaceAll("<", "\\u003c");
 ---
 <BaseLayout
-  title="FAQ — Cave of Chi"
+  title="FAQ Cave of Chi | Workshop & Reservasi"
   description="Jawaban atas pertanyaan umum tentang pengalaman dan reservasi di Cave of Chi."
 >
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={faqJsonLd} />
+  </Fragment>
   <PageHeader
     eyebrow="A few helpful things"
     title="Frequently asked."

@@ -9,7 +9,7 @@ export const FAQ = [
   },
   {
     q: "Bagaimana cara memesan tempat?",
-    a: "Pilih pengalaman yang ingin diikuti, tekan tombol reservasi, lalu isi data peserta. Pada mode demo, proses ini hanya simulasi dan tidak membuat pemesanan sungguhan.",
+    a: "Pilih pengalaman dan sesi yang tersedia, tekan tombol “Pesan sekarang”, lalu isi data pemesan dan jumlah peserta. Setelah memeriksa detail booking, lanjutkan ke pembayaran melalui metode yang ditampilkan di website.",
   },
   {
     q: "Apakah saya bisa mengadakan private class?",

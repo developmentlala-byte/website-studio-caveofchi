@@ -12,7 +12,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-body);
-  line-height: 1.5;
+  line-height: normal;
 }
 
 body:has(dialog[open]) {

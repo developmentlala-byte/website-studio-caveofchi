@@ -10,7 +10,6 @@ import UpcomingSchedule from "@/components/home/UpcomingSchedule.astro";
 import ExperiencesSection from "@/components/events/ExperiencesSection.astro";
 import { getUpcomingEvents } from "@/lib/events";
 import { fetchStudios } from "@/lib/api/studios";
-import { SITE } from "@/lib/site";
 
 const [events, studios] = await Promise.all([
   getUpcomingEvents(),
@@ -18,8 +17,8 @@ const [events, studios] = await Promise.all([
 ]);
 ---
 <BaseLayout
-  title="Cave of Chi — Art. Space. Energy."
-  description={SITE.description}
+  title="Cave of Chi | Creative Workshop, Wellness & Events"
+  description="Cave of Chi adalah creative social sanctuary untuk workshop kreatif, pengalaman wellness, dan pertemuan komunitas. Lihat jadwal dan pesan tempat langsung melalui website."
   headerVariant="overlay"
 >
   <Hero studios={studios} />
