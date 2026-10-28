@@ -10,6 +10,7 @@ import SiteFooter from '@/components/layout/SiteFooter.astro';
 import BookingModal from '@/components/booking/BookingModal.astro';
 import logo from '@/assets/images/logo-cave-of-chi.png';
 import { SITE } from '@/lib/site';
+import { localizedPath, translate } from '@/lib/i18n';
 
 interface Props {
   title: string;
@@ -23,8 +24,12 @@ const {
   headerVariant = 'solid', noindex = false,
 } = Astro.props;
 
+const locale = Astro.locals.locale;
+const pagePath = Astro.locals.localePath.split(/[?#]/, 1)[0].replace(/\/+$/, '') || '/';
+const localizedTitle = translate(locale, title);
+const localizedDescription = translate(locale, description);
 const siteOrigin = Astro.site ?? new URL(Astro.url.origin);
-const canonicalPath = Astro.url.pathname.replace(/\/+$/, '') || '/';
+const canonicalPath = pagePath;
 const canonical = new URL(canonicalPath, siteOrigin);
 const ogUrl = new URL(ogImage, siteOrigin);
 const siteUrl = new URL('/', siteOrigin).toString();
@@ -40,23 +45,23 @@ const structuredData = JSON.stringify({
       name: 'Cave of Chi',
       url: siteUrl,
       logo: new URL(logo.src, siteOrigin).toString(),
-      description: SITE.description,
+      description: translate(locale, SITE.description),
     },
     {
       '@type': 'WebSite',
       '@id': websiteId,
       url: siteUrl,
       name: 'Cave of Chi',
-      inLanguage: 'id-ID',
+      inLanguage: locale === 'en' ? 'en-US' : 'id-ID',
       publisher: { '@id': organizationId },
     },
     {
       '@type': 'WebPage',
       '@id': webpageId,
       url: canonical.toString(),
-      name: title,
-      description,
-      inLanguage: 'id-ID',
+      name: localizedTitle,
+      description: localizedDescription,
+      inLanguage: locale === 'en' ? 'en-US' : 'id-ID',
       isPartOf: { '@id': websiteId },
       about: { '@id': organizationId },
     },
@@ -64,21 +69,24 @@ const structuredData = JSON.stringify({
 }).replaceAll('<', '\\u003c');
 ---
 <!doctype html>
-<html lang="id">
+<html lang={locale === 'en' ? 'en' : 'id'}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f7f1ea" />
     <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large'} />
-    <title>{title}</title>
-    <meta name="description" content={description} />
+    <title>{localizedTitle}</title>
+    <meta name="description" content={localizedDescription} />
     <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="id" href={new URL(localizedPath('id', pagePath), siteOrigin)} />
+    <link rel="alternate" hreflang="en" href={new URL(localizedPath('en', pagePath), siteOrigin)} />
+    <link rel="alternate" hreflang="x-default" href={new URL(localizedPath('id', pagePath), siteOrigin)} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta property="og:type" content="website" />
-    <meta property="og:locale" content="id_ID" />
+    <meta property="og:locale" content={locale === 'en' ? 'en_US' : 'id_ID'} />
     <meta property="og:site_name" content="Cave of Chi" />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
+    <meta property="og:title" content={localizedTitle} />
+    <meta property="og:description" content={localizedDescription} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogUrl} />
     <meta property="og:image:type" content="image/png" />
@@ -86,15 +94,15 @@ const structuredData = JSON.stringify({
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={description} />
+    <meta name="twitter:title" content={localizedTitle} />
+    <meta name="twitter:description" content={localizedDescription} />
     <meta name="twitter:image" content={ogUrl} />
     <meta name="twitter:image:alt" content="Cave of Chi — Art. Space. Energy." />
     <script type="application/ld+json" set:html={structuredData} />
     <slot name="head" />
   </head>
   <body>
-    <a class="skip-link" href="#main">Lewati ke konten</a>
+    <a class="skip-link" href="#main">{translate(locale, 'Lewati ke konten')}</a>
     <div class="grain" aria-hidden="true"></div>
     <AnnouncementBar />
     <SiteHeader variant={headerVariant} />

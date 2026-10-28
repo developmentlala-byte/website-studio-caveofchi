@@ -1,13 +1,15 @@
 ---
 import type { CaveEvent } from '@/lib/events';
 import { formatDateShort, formatTime } from '@/lib/format';
+import { translate } from '@/lib/i18n';
 
 type EventSession = CaveEvent['data']['sessions'][number];
 interface Props { event: CaveEvent; variant?: 'solid' | 'outline'; session: EventSession }
 const { event, variant = 'solid', session } = Astro.props;
 const d = event.data;
+const locale = Astro.locals.locale;
 const soldOut = session.seatsLeft <= 0;
-const meta = `${session.studioName} · ${formatDateShort(session.startsAt)} · ${formatTime(session.startsAt)} WIB`;
+const meta = `${session.studioName} · ${formatDateShort(session.startsAt, locale)} · ${formatTime(session.startsAt)} WIB`;
 ---
 <button type="button" class:list={['book', variant]} data-book
   data-session-id={session.sessionId} data-event-slug={event.id}
@@ -15,9 +17,11 @@ const meta = `${session.studioName} · ${formatDateShort(session.startsAt)} · $
   data-title={d.title} data-meta={meta}
   data-price={session.price} data-seats={session.seatsLeft}
   data-bookable={session.isBookable}
-  data-available-label={variant === 'outline' ? 'Book ↗' : 'Pesan sekarang ↗'}
+  data-available-label={variant === 'outline'
+    ? (locale === 'en' ? 'Book ↗' : 'Book ↗')
+    : translate(locale, 'Pesan sekarang ↗')}
   disabled={soldOut || !session.isBookable}>
-  {soldOut ? 'Kuota habis' : <slot>Pesan sekarang ↗</slot>}
+  {soldOut ? translate(locale, 'Kuota habis') : <slot>{translate(locale, 'Pesan sekarang ↗')}</slot>}
 </button>
 <style>
   .book {

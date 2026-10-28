@@ -1,10 +1,12 @@
 ---
 import BookButton from '@/components/booking/BookButton.astro';
 import type { CaveEvent } from '@/lib/events';
+import { translate } from '@/lib/i18n';
 import { formatDateShort, formatDayNumber, formatIDR, formatMonthRange, formatSeatsLeft, formatTime, formatWeekday, dayKey } from '@/lib/format';
 
 interface Props { events: CaveEvent[] }
 const { events } = Astro.props;
+const locale = Astro.locals.locale;
 type EventSession = CaveEvent['data']['sessions'][number];
 interface Session {
   time: string;
@@ -26,7 +28,7 @@ for (const event of events) {
       day = {
         id: `day-${key}`,
         date,
-        dow: formatWeekday(date),
+        dow: formatWeekday(date, locale),
         day: formatDayNumber(date),
         sessions: [],
       };
@@ -46,40 +48,39 @@ for (const event of events) {
 const salesLabel = (session: EventSession) => {
   if (session.salesStatus === 'coming_soon') {
     return session.registrationOpensAt
-      ? `Penjualan dibuka ${formatDateShort(session.registrationOpensAt)}`
-      : 'Penjualan segera dibuka';
+      ? `${translate(locale, 'Penjualan dibuka')} ${formatDateShort(session.registrationOpensAt, locale)}`
+      : translate(locale, 'Penjualan segera dibuka');
   }
-  if (session.salesStatus === 'sold_out') return 'Kuota habis';
-  if (session.salesStatus === 'closed') return 'Pendaftaran ditutup';
-  return formatSeatsLeft(session.seatsLeft);
+  if (session.salesStatus === 'sold_out') return translate(locale, 'Kuota habis');
+  if (session.salesStatus === 'closed') return translate(locale, 'Pendaftaran ditutup');
+  return formatSeatsLeft(session.seatsLeft, locale);
 };
 
 const DAYS = [...grouped.values()];
 const monthRange = DAYS.length > 0
-  ? formatMonthRange(DAYS[0].date, DAYS[DAYS.length - 1].date)
-  : 'Jadwal mendatang';
+  ? formatMonthRange(DAYS[0].date, DAYS[DAYS.length - 1].date, locale)
+  : translate(locale, 'Jadwal mendatang');
 ---
 <section class="schedule section" id="schedule">
   <div class="container schedule-inner">
     <div class="schedule-copy">
-      <div class="eyebrow">04 / Upcoming gatherings</div>
-      <h2 class="heading">Save your<br /><em class="script">seat.</em></h2>
+      <div class="eyebrow">04 / {translate(locale, 'Upcoming gatherings')}</div>
+      <h2 class="heading">{translate(locale, 'Save your')}<br /><em class="script">{translate(locale, 'seat')}</em>.</h2>
       <p>
-        Setiap pertemuan dibuat kecil dan personal. Pilih jadwal dan kelas yang kamu suka, lalu
-        pesan tempat langsung melalui website.
+        {translate(locale, 'Setiap pertemuan dibuat kecil dan personal. Pilih jadwal dan kelas yang kamu suka, lalu pesan tempat langsung melalui website.')}
       </p>
-      <span class="tag"><span class="dot"></span> Kapasitas mengikuti ketersediaan setiap sesi</span>
+      <span class="tag"><span class="dot"></span> {translate(locale, 'Kapasitas mengikuti ketersediaan setiap sesi')}</span>
     </div>
 
     <div class="calendar" data-calendar>
       <div class="calendar-head">
         <h3>{monthRange}</h3>
-        <span>Jadwal API</span>
+        <span>{translate(locale, 'Jadwal API')}</span>
       </div>
 
       {DAYS.length > 0 ? (
         <>
-          <div class="calendar-days" role="tablist" aria-label="Pilih tanggal">
+          <div class="calendar-days" role="tablist" aria-label={translate(locale, 'Pilih tanggal')}>
             {DAYS.map((d, i) => (
               <button
                 type="button"
@@ -112,7 +113,7 @@ const monthRange = DAYS.length > 0
                     <small>{s.cave} · {s.price} · <span data-seats-left={s.session.sessionId}>{salesLabel(s.session)}</span></small>
                   </div>
                   <BookButton event={s.event} session={s.session} variant="outline">
-                    {s.session.isBookable ? 'Pesan sekarang ↗' : s.session.salesStatus === 'coming_soon' ? 'Segera dibuka' : s.session.salesStatus === 'sold_out' ? 'Kuota habis' : 'Pendaftaran ditutup'}
+                    {s.session.isBookable ? translate(locale, 'Pesan sekarang ↗') : s.session.salesStatus === 'coming_soon' ? translate(locale, 'Segera dibuka') : s.session.salesStatus === 'sold_out' ? translate(locale, 'Kuota habis') : translate(locale, 'Pendaftaran ditutup')}
                   </BookButton>
                 </div>
               ))}
@@ -120,7 +121,7 @@ const monthRange = DAYS.length > 0
           ))}
         </>
       ) : (
-        <p class="empty">Belum ada sesi publik mendatang dari sistem.</p>
+        <p class="empty">{translate(locale, 'Belum ada sesi publik mendatang dari sistem.')}</p>
       )}
     </div>
   </div>

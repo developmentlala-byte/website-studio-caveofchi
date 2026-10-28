@@ -1,5 +1,7 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import { localizedPath, translate } from "@/lib/i18n";
+const locale = Astro.locals.locale;
 ---
 <BaseLayout
   title="Halaman tidak ditemukan — Cave of Chi"
@@ -7,9 +9,9 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
   noindex
 >
   <section class="not-found section container">
-    <div class="eyebrow">404 / Page not found</div>
-    <h1 class="heading">Let's find<br /><em class="script">our way back.</em></h1>
-    <a href="/">Kembali ke beranda <span aria-hidden="true">↗</span></a>
+    <div class="eyebrow">404 / {translate(locale, 'Halaman tidak ditemukan')}</div>
+    <h1 class="heading">{locale === 'en' ? <>Let's find<br /><em class="script">our way back.</em></> : <>Ayo cari<br /><em class="script">jalan pulang.</em></>}</h1>
+    <a href={localizedPath(locale, '/')}>{translate(locale, 'Kembali ke beranda')} <span aria-hidden="true">↗</span></a>
   </section>
 </BaseLayout>
 

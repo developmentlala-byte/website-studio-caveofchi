@@ -1,10 +1,12 @@
 ---
 import BookButton from '@/components/booking/BookButton.astro';
 import type { CaveEvent } from '@/lib/events';
+import { translate } from '@/lib/i18n';
 import { dayKey, formatDateShort, formatDayNumber, formatIDR, formatMonthRange, formatSeatsLeft, formatTime, formatWeekday } from '@/lib/format';
 
 interface Props { events: CaveEvent[] }
 const { events } = Astro.props;
+const locale = Astro.locals.locale;
 type EventSession = CaveEvent['data']['sessions'][number];
 const slots = events.flatMap((event) =>
   event.data.sessions.map((session) => ({ event, session })),
@@ -12,12 +14,12 @@ const slots = events.flatMap((event) =>
 const salesLabel = (session: EventSession) => {
   if (session.salesStatus === 'coming_soon') {
     return session.registrationOpensAt
-      ? `Penjualan dibuka ${formatDateShort(session.registrationOpensAt)}`
-      : 'Penjualan segera dibuka';
+      ? `${translate(locale, 'Penjualan dibuka')} ${formatDateShort(session.registrationOpensAt, locale)}`
+      : translate(locale, 'Penjualan segera dibuka');
   }
-  if (session.salesStatus === 'sold_out') return 'Kuota habis';
-  if (session.salesStatus === 'closed') return 'Pendaftaran ditutup';
-  return formatSeatsLeft(session.seatsLeft);
+  if (session.salesStatus === 'sold_out') return translate(locale, 'Kuota habis');
+  if (session.salesStatus === 'closed') return translate(locale, 'Pendaftaran ditutup');
+  return formatSeatsLeft(session.seatsLeft, locale);
 };
 const grouped = new Map<string, Array<(typeof slots)[number]>>();
 for (const slot of slots) {
@@ -28,16 +30,16 @@ for (const slot of slots) {
 }
 const days = [...grouped.entries()];
 const range = slots.length
-  ? formatMonthRange(slots[0].session.startsAt, slots[slots.length - 1].session.startsAt)
+  ? formatMonthRange(slots[0].session.startsAt, slots[slots.length - 1].session.startsAt, locale)
   : '';
 ---
 <div class="calendar-card" data-schedule>
-  <div class="calendar-top"><strong>{range || 'Jadwal'}</strong></div>
+  <div class="calendar-top"><strong>{range || translate(locale, 'Jadwal')}</strong></div>
   {days.length === 0 ? (
-    <p class="agenda-empty">Belum ada kelas terjadwal.</p>
+    <p class="agenda-empty">{translate(locale, 'Belum ada kelas terjadwal.')}</p>
   ) : (
     <>
-      <div class="calendar-pills" role="group" aria-label="Pilih tanggal kelas">
+      <div class="calendar-pills" role="group" aria-label={translate(locale, 'Pilih tanggal kelas')}>
         {days.map(([key, items], i) => (
           <button type="button" class:list={['date-pill', { active: i === 0 }]}
             data-date={key} aria-pressed={i === 0 ? "true" : "false"}>
@@ -57,7 +59,7 @@ const range = slots.length
               </div>
               <div class="agenda-action">
                 <BookButton event={event} session={session} variant="outline">
-                  {session.isBookable ? 'Pesan sekarang ↗' : session.salesStatus === 'coming_soon' ? 'Segera dibuka' : session.salesStatus === 'sold_out' ? 'Kuota habis' : 'Pendaftaran ditutup'}
+                    {session.isBookable ? translate(locale, 'Pesan sekarang ↗') : session.salesStatus === 'coming_soon' ? translate(locale, 'Segera dibuka') : session.salesStatus === 'sold_out' ? translate(locale, 'Kuota habis') : translate(locale, 'Pendaftaran ditutup')}
                 </BookButton>
               </div>
             </div>

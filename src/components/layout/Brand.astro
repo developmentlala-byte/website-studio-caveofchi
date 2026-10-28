@@ -1,18 +1,20 @@
 ---
 import logo from '@/assets/images/logo-cave-of-chi.png';
+import { localizedPath } from '@/lib/i18n';
 
 interface Props {
   size?: 'md' | 'lg';
 }
 
 const { size = 'md' } = Astro.props;
+const locale = Astro.locals.locale;
 
 // Tinggi tampil (px). Gambar dibuat 2x lebih besar untuk layar retina,
 // lalu ukuran tampilnya diatur lewat CSS di bawah.
 const DISPLAY_HEIGHT = { md: 48, lg: 88 } as const;
 const height = DISPLAY_HEIGHT[size] * 2;
 ---
-<a class:list={['brand', size]} href="/">
+<a class:list={['brand', size]} href={localizedPath(locale, '/')}>
   <img
     src={logo.src}
     alt="Cave of Chi — Art. Space. Energy."

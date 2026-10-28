@@ -1,47 +1,32 @@
 ---
-const FAQS = [
-  {
-    q: 'Apakah pemula boleh ikut kelas?',
-    a: 'Tentu. Mayoritas workshop dirancang ramah pemula. Fasilitator akan membimbing langkah demi langkah.',
-  },
-  {
-    q: 'Apa yang sudah termasuk di harga kelas?',
-    a: 'Harga sudah mencakup material, pendampingan fasilitator, dan minuman hangat selama sesi. Detail tiap kelas bisa dilihat di halaman experiences.',
-  },
-  {
-    q: 'Bolehkah membuat private class?',
-    a: 'Bisa. Untuk kelompok kecil, ulang tahun, atau acara tim, kamu bisa request private class dan kami akan membantu mengatur jadwalnya.',
-  },
-  {
-    q: 'Bagaimana cara memesan tempat?',
-    a: 'Pilih event dan sesi yang tersedia, tekan tombol “Pesan sekarang”, lalu isi data pemesan dan jumlah peserta. Setelah memeriksa detail booking, lanjutkan ke pembayaran melalui metode yang ditampilkan di website.',
-  },
-];
+import { FAQ } from '@/data/faq';
+import { translate } from '@/lib/i18n';
+const locale = Astro.locals.locale;
 
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: FAQS.map((f) => ({
+  mainEntity: FAQ.map((f) => ({
     '@type': 'Question',
-    name: f.q,
-    acceptedAnswer: { '@type': 'Answer', text: f.a },
+    name: translate(locale, f.q),
+    acceptedAnswer: { '@type': 'Answer', text: translate(locale, f.a) },
   })),
 };
 ---
 <section class="faq section" id="faq">
   <div class="container faq-inner">
     <div class="faq-head">
-      <div class="eyebrow">Before your first visit</div>
-      <h2 class="heading">A few<br /><em class="script-cstt-color">good things</em><br />to know.</h2>
+      <div class="eyebrow">{translate(locale, 'Before your first visit')}</div>
+      <h2 class="heading">{translate(locale, 'A few')}<br /><em class="script-cstt-color">{translate(locale, 'good things')}</em><br />{translate(locale, 'to know.')}</h2>
     </div>
     <div class="faq-list">
-      {FAQS.map((f, i) => (
+      {FAQ.map((f, i) => (
         <details name="faq" open={i === 0}>
           <summary>
-            <span>{f.q}</span>
+            <span>{translate(locale, f.q)}</span>
             <span class="faq-icon" aria-hidden="true"></span>
           </summary>
-          <p>{f.a}</p>
+          <p>{translate(locale, f.a)}</p>
         </details>
       ))}
     </div>

@@ -4,7 +4,9 @@ import Gallery from "@/components/common/Gallery.astro";
 import { fetchStudios } from "@/lib/api/studios";
 import { getUpcomingEvents } from "@/lib/events";
 import { formatDateShort, formatTime } from "@/lib/format";
+import { localizedPath, translate } from "@/lib/i18n";
 
+const locale = Astro.locals.locale;
 const studios = await fetchStudios();
 const studio = studios.find((item) => item.slug === Astro.params.slug);
 if (!studio) Astro.response.status = 404;
@@ -21,12 +23,13 @@ const gallery = [
 ].filter((image, index, images) =>
   images.findIndex((candidate) => candidate.url === image.url) === index,
 );
+console.log("studio", studios);
 ---
-<BaseLayout title={studio ? `${studio.name} — Cave of Chi` : "Studio tidak ditemukan — Cave of Chi"} description={studio?.shortDescription ?? studio?.description ?? "Studio tidak ditemukan."}>
+<BaseLayout title={studio ? `${studio.name} — Cave of Chi` : `${translate(locale, "Studio tidak ditemukan")} — Cave of Chi`} description={studio?.shortDescription ?? studio?.description ?? translate(locale, "Studio tidak ditemukan.")}>
   {studio ? (
   <article class="studio-detail section container">
-    <a class="back-link" href="/#spaces">← Semua studio</a>
-    <div class="eyebrow">{studio.code} · Kapasitas {studio.maxCapacity} orang</div>
+    <a class="back-link" href={localizedPath(locale, "/#spaces")}>← {translate(locale, "Semua studio")}</a>
+    <div class="eyebrow">{studio.code} · {translate(locale, "Kapasitas")} {studio.maxCapacity} {translate(locale, "orang")}</div>
     <h1 class="heading">{studio.name}</h1>
     {studio.shortDescription && <p class="lead">{studio.shortDescription}</p>}
 
@@ -39,39 +42,39 @@ const gallery = [
     )}
 
     <dl class="facts">
-      <div><dt>Kode studio</dt><dd>{studio.code}</dd></div>
-      <div><dt>Kapasitas</dt><dd>{studio.maxCapacity} orang</dd></div>
+      <div><dt>{translate(locale, "Kode studio")}</dt><dd>{studio.code}</dd></div>
+      <div><dt>{translate(locale, "Kapasitas")}</dt><dd>{studio.maxCapacity} {translate(locale, "orang")}</dd></div>
     </dl>
 
     <section class="studio-events" aria-labelledby="studio-events-title">
-      <h2 id="studio-events-title">Event di {studio.name}</h2>
+      <h2 id="studio-events-title">{translate(locale, "Event di")} {studio.name}</h2>
       {studioEvents.length > 0 ? (
         <div class="event-list">
           {studioEvents.map(({ event, sessions }) => (
             <article class="event-item">
               <div>
-                <h3><a href={`/experiences/${event.id}`}>{event.data.title}</a></h3>
+                <h3><a href={localizedPath(locale, `/experiences/${event.id}`)}>{event.data.title}</a></h3>
                 <p>{event.data.subtitle}</p>
                 <ul>
                   {sessions.map((session) => (
-                    <li>{formatDateShort(session.startsAt)} · {formatTime(session.startsAt)} WIB</li>
+                    <li>{formatDateShort(session.startsAt, locale)} · {formatTime(session.startsAt)} WIB</li>
                   ))}
                 </ul>
               </div>
-              <a class="event-link" href={`/experiences/${event.id}`} aria-label={`Lihat ${event.data.title}`}>↗</a>
+              <a class="event-link" href={localizedPath(locale, `/experiences/${event.id}`)} aria-label={`${translate(locale, "Lihat")} ${event.data.title}`}>↗</a>
             </article>
           ))}
         </div>
       ) : (
-        <p class="empty-events">Belum ada event mendatang di studio ini.</p>
+        <p class="empty-events">{translate(locale, "Belum ada event mendatang di studio ini.")}</p>
       )}
     </section>
   </article>
   ) : (
     <section class="studio-detail section container">
-      <h1 class="heading">Studio tidak ditemukan</h1>
-      <p class="lead">Studio ini mungkin sudah tidak tersedia.</p>
-      <a class="back-link" href="/#spaces">← Semua studio</a>
+      <h1 class="heading">{translate(locale, "Studio tidak ditemukan")}</h1>
+      <p class="lead">{translate(locale, "Studio ini mungkin sudah tidak tersedia.")}</p>
+      <a class="back-link" href={localizedPath(locale, "/#spaces")}>← {translate(locale, "Semua studio")}</a>
     </section>
   )}
 </BaseLayout>

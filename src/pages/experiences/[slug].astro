@@ -5,8 +5,10 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import { formatDateShort, formatDuration, formatIDR, formatSeatsLeft, formatTime } from "@/lib/format";
 import { getCategoryLabel } from "@/lib/site";
 import { getEventBySlug } from "@/lib/events";
+import { localizedPath, translate } from "@/lib/i18n";
 
 const event = await getEventBySlug(Astro.params.slug ?? "");
+const locale = Astro.locals.locale;
 if (!event) Astro.response.status = 404;
 const data = event?.data;
 const sessions = data?.sessions ?? [];
@@ -40,15 +42,15 @@ const jsonLd = data && featuredSession && endsAt
 const salesLabel = (session: (typeof sessions)[number]) => {
   if (session.salesStatus === "coming_soon") {
     return session.registrationOpensAt
-      ? `Penjualan dibuka ${formatDateShort(session.registrationOpensAt)}`
-      : "Penjualan segera dibuka";
+      ? `${translate(locale, "Penjualan dibuka")} ${formatDateShort(session.registrationOpensAt, locale)}`
+      : translate(locale, "Penjualan segera dibuka");
   }
-  if (session.salesStatus === "sold_out") return "Kuota habis";
-  if (session.salesStatus === "closed") return "Pendaftaran ditutup";
-  return formatSeatsLeft(session.seatsLeft);
+  if (session.salesStatus === "sold_out") return translate(locale, "Kuota habis");
+  if (session.salesStatus === "closed") return translate(locale, "Pendaftaran ditutup");
+  return formatSeatsLeft(session.seatsLeft, locale);
 };
 ---
-<BaseLayout title={data ? `${data.title} — Cave of Chi` : "Event tidak ditemukan — Cave of Chi"} description={data?.subtitle ?? "Event tidak ditemukan."}>
+<BaseLayout title={data ? `${data.title} — Cave of Chi` : `${translate(locale, "Event tidak ditemukan")} — Cave of Chi`} description={data?.subtitle ?? translate(locale, "Event tidak ditemukan.")}>
   {data && event ? (
   <>
   <Fragment slot="head">
@@ -56,48 +58,48 @@ const salesLabel = (session: (typeof sessions)[number]) => {
   </Fragment>
 
   <article class="detail section container">
-    <a class="back-link" href="/experiences">← Semua experiences</a>
+    <a class="back-link" href={localizedPath(locale, "/experiences")}>← {translate(locale, "Semua experiences")}</a>
     <div class="eyebrow">{getCategoryLabel(data.category)}</div>
     <h1 class="heading">{data.title}</h1>
     <p class="lead">{data.subtitle}</p>
     <Gallery images={gallery} label={data.title} />
 
     <dl class="facts">
-      <div><dt>Jadwal</dt><dd>{sessions.length > 0 ? `${sessions.length} sesi` : "Segera diumumkan"}</dd></div>
-      <div><dt>Durasi</dt><dd>{featuredSession ? formatDuration(featuredSession.durationMinutes) : "Segera diumumkan"}</dd></div>
-      <div><dt>Tempat</dt><dd>{featuredSession?.studioName ?? "Segera diumumkan"}</dd></div>
-      <div><dt>Harga</dt><dd>{sessions.length > 0 ? `Mulai dari ${formatIDR(Math.min(...sessions.map((session) => session.price)))}` : "Segera diumumkan"}</dd></div>
+      <div><dt>{translate(locale, "Jadwal")}</dt><dd>{sessions.length > 0 ? `${sessions.length} ${translate(locale, "sesi")}` : translate(locale, "Segera diumumkan")}</dd></div>
+      <div><dt>{translate(locale, "Durasi")}</dt><dd>{featuredSession ? formatDuration(featuredSession.durationMinutes, locale) : translate(locale, "Segera diumumkan")}</dd></div>
+      <div><dt>{translate(locale, "Tempat")}</dt><dd>{featuredSession?.studioName ?? translate(locale, "Segera diumumkan")}</dd></div>
+      <div><dt>{translate(locale, "Harga")}</dt><dd>{sessions.length > 0 ? `${translate(locale, "Mulai dari")} ${formatIDR(Math.min(...sessions.map((session) => session.price)))}` : translate(locale, "Segera diumumkan")}</dd></div>
     </dl>
 
     {data.description?.split("\n\n").map((paragraph) => <p class="description">{paragraph}</p>)}
     {data.included.length > 0 && (
       <>
-        <h2>Sudah termasuk</h2>
+        <h2>{translate(locale, "Sudah termasuk")}</h2>
         <ul>{data.included.map((item) => <li>{item}</li>)}</ul>
       </>
     )}
 
-    <h2>Jadwal &amp; ketersediaan</h2>
+    <h2>{translate(locale, "Jadwal & ketersediaan")}</h2>
     {sessions.length === 0 ? (
-      <p class="coming-soon">Jadwal dan harga akan diumumkan di halaman ini setelah sesi tersedia.</p>
+      <p class="coming-soon">{translate(locale, "Jadwal dan harga akan diumumkan di halaman ini setelah sesi tersedia.")}</p>
     ) : (
     <div class="detail-sessions">
       {sessions.map((session) => (
         <div class="detail-session">
           <div class="session-info">
-            <strong>{formatDateShort(session.startsAt)} · {formatTime(session.startsAt)} WIB</strong>
-            <small>{session.studioName} · {formatDuration(session.durationMinutes)} · <span data-seats-left={session.sessionId}>{salesLabel(session)}</span></small>
+            <strong>{formatDateShort(session.startsAt, locale)} · {formatTime(session.startsAt)} WIB</strong>
+            <small>{session.studioName} · {formatDuration(session.durationMinutes, locale)} · <span data-seats-left={session.sessionId}>{salesLabel(session)}</span></small>
           </div>
           <div class="session-offer">
             <strong>{formatIDR(session.price)}</strong>
             <BookButton event={event} session={session}>
               {session.isBookable
-                ? "Pesan sekarang ↗"
+                ? translate(locale, "Pesan sekarang ↗")
                 : session.salesStatus === "coming_soon"
-                  ? "Segera dibuka"
+                ? translate(locale, "Segera dibuka")
                   : session.salesStatus === "sold_out"
-                    ? "Kuota habis"
-                    : "Pendaftaran ditutup"}
+                  ? translate(locale, "Kuota habis")
+                  : translate(locale, "Pendaftaran ditutup")}
             </BookButton>
           </div>
         </div>
@@ -108,9 +110,9 @@ const salesLabel = (session: (typeof sessions)[number]) => {
   </>
   ) : (
     <section class="detail section container">
-      <h1 class="heading">Event tidak ditemukan</h1>
-      <p class="lead">Event ini mungkin sudah tidak tersedia.</p>
-      <a class="back-link" href="/experiences">← Semua experiences</a>
+      <h1 class="heading">{translate(locale, "Event tidak ditemukan")}</h1>
+      <p class="lead">{translate(locale, "Event ini mungkin sudah tidak tersedia.")}</p>
+      <a class="back-link" href={localizedPath(locale, "/experiences")}>← {translate(locale, "Semua experiences")}</a>
     </section>
   )}
 </BaseLayout>

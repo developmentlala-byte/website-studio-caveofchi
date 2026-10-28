@@ -1,34 +1,36 @@
 ---
 import Brand from '@/components/layout/Brand.astro';
 import { SITE, NAV_LINKS } from '@/lib/site';
+import { localizedPath, translate } from '@/lib/i18n';
 const year = new Date().getFullYear();
+const locale = Astro.locals.locale;
 ---
 <footer class="footer">
   <div class="container">
     <div class="footer-upper">
       <div>
         <Brand size="lg" />
-        <p class="footer-caption">An invitation to slow down, create and connect.</p>
+        <p class="footer-caption">{translate(locale, 'An invitation to slow down, create and connect.')}</p>
       </div>
       <div class="footer-links">
         <div>
-          <strong>Discover</strong>
+          <strong>{translate(locale, 'Discover')}</strong>
           {NAV_LINKS.filter((l) => l.label !== 'Community').map((l) => (
-            <a href={l.href}>
+            <a href={localizedPath(locale, l.href)}>
               {l.label === 'Our Story'
-                ? 'Our story'
+                ? translate(locale, 'Our story')
                 : l.label === 'The Caves'
-                  ? 'The caves'
-                  : l.label}
+                  ? translate(locale, 'The Caves')
+                  : translate(locale, l.label)}
             </a>
           ))}
         </div>
         <div>
-          <strong>Connect</strong>
-          <a href="/about#community">Our community</a>
+          <strong>{translate(locale, 'Connect')}</strong>
+          <a href={localizedPath(locale, '/about#community')}>{translate(locale, 'Our community')}</a>
           <span>Instagram: {SITE.instagram}</span>
-          <span>WhatsApp: coming soon</span>
-          <span>Location:</span>
+          <span>WhatsApp: {translate(locale, 'coming soon')}</span>
+          <!-- <span>{translate(locale, 'Location')}:</span> -->
           <a
             href="https://www.google.com/maps/search/?api=1&query=Jl.+Raya+Abdul+Gani+No.48%2C+RT.006%2FRW.001%2C+Kalibaru%2C+Kec.+Cilodong%2C+Kota+Depok%2C+Jawa+Barat+16414"
             target="_blank"
@@ -41,10 +43,8 @@ const year = new Date().getFullYear();
     </div>
     <div class="footer-bottom">
       <span>© {year} Cave of Chi • Art. Space. Energy.</span>
-      <span class="footer-note">
-        Pilih pengalaman, cek jadwal, dan pesan tempat langsung melalui website.
-      </span>
-      <a href="#main">Back to top ↑</a>
+      <span class="footer-note">{translate(locale, 'Pilih pengalaman, cek jadwal, dan pesan tempat langsung melalui website.')}</span>
+      <a href="#main">{translate(locale, 'Back to top ↑')}</a>
     </div>
   </div>
 </footer>

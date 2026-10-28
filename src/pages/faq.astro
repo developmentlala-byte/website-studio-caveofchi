@@ -3,14 +3,16 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import FaqList from "@/components/faq/FaqList.astro";
 import PageHeader from "@/components/layout/PageHeader.astro";
 import { FAQ } from "@/data/faq";
+import { translate } from "@/lib/i18n";
+const locale = Astro.locals.locale;
 
 const faqJsonLd = JSON.stringify({
   "@context": "https://schema.org",
   "@type": "FAQPage",
   mainEntity: FAQ.map((item) => ({
     "@type": "Question",
-    name: item.q,
-    acceptedAnswer: { "@type": "Answer", text: item.a },
+    name: translate(locale, item.q),
+    acceptedAnswer: { "@type": "Answer", text: translate(locale, item.a) },
   })),
 }).replaceAll("<", "\\u003c");
 ---

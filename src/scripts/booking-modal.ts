@@ -5,11 +5,13 @@ import {
   type PublicBookingSession,
 } from "@/lib/api/events";
 import { formatIDR } from "@/lib/format";
+import { translate, type Locale } from "@/lib/i18n";
 
 const dialog = document.querySelector<HTMLDialogElement>("#booking-dialog");
+const locale: Locale = document.documentElement.lang === "en" ? "en" : "id";
 
 function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("id-ID", {
+  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "id-ID", {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -36,16 +38,16 @@ const refreshSessionAvailability = async () => {
           button.dataset.bookable = String(session.isBookable);
           button.disabled = session.seatsLeft === 0 || !session.isBookable;
           if (session.salesStatus === "sold_out" || session.seatsLeft === 0) {
-            button.textContent = "Kuota habis";
+            button.textContent = translate(locale, "Kuota habis");
           } else if (session.salesStatus === "coming_soon") {
             button.textContent = session.registrationOpensAt
-              ? `Dibuka ${formatDate(session.registrationOpensAt)}`
-              : "Segera dibuka";
+              ? `${translate(locale, "Dibuka")} ${formatDate(session.registrationOpensAt)}`
+              : translate(locale, "Segera dibuka");
           } else if (session.salesStatus === "closed") {
-            button.textContent = "Pendaftaran ditutup";
+            button.textContent = translate(locale, "Pendaftaran ditutup");
           } else if (session.isBookable) {
             button.textContent =
-              button.dataset.availableLabel ?? "Pesan sekarang ↗";
+              button.dataset.availableLabel ?? translate(locale, "Pesan sekarang ↗");
           }
         });
       document
@@ -55,14 +57,14 @@ const refreshSessionAvailability = async () => {
         .forEach((label) => {
           label.textContent =
             session.salesStatus === "sold_out" || session.seatsLeft === 0
-              ? "Kuota habis"
+              ? translate(locale, "Kuota habis")
               : session.salesStatus === "coming_soon"
                 ? session.registrationOpensAt
-                  ? `Dibuka ${formatDate(session.registrationOpensAt)}`
-                  : "Segera dibuka"
+                  ? `${translate(locale, "Dibuka")} ${formatDate(session.registrationOpensAt)}`
+                  : translate(locale, "Penjualan segera dibuka")
                 : session.salesStatus === "closed"
-                  ? "Pendaftaran ditutup"
-                  : `Sisa ${session.seatsLeft} kursi`;
+                  ? translate(locale, "Pendaftaran ditutup")
+                  : `${session.seatsLeft} ${translate(locale, session.seatsLeft === 1 ? "spot" : "spots")} ${translate(locale, "tersisa")}`;
         });
     }
     document.dispatchEvent(
@@ -159,9 +161,9 @@ if (dialog) {
   };
 
   const renderEvents = () => {
-    const needle = eventSearch.value.trim().toLocaleLowerCase("id-ID");
+    const needle = eventSearch.value.trim().toLocaleLowerCase(locale === "en" ? "en-US" : "id-ID");
     const matchingEvents = events.filter((event) =>
-      `${event.title} ${event.slug}`.toLocaleLowerCase("id-ID").includes(needle),
+      `${event.title} ${event.slug}`.toLocaleLowerCase(locale === "en" ? "en-US" : "id-ID").includes(needle),
     );
     const pageCount = Math.max(1, Math.ceil(matchingEvents.length / eventPageSize));
     currentEventPage = Math.min(currentEventPage, pageCount);
@@ -192,13 +194,15 @@ if (dialog) {
     eventPagination.hidden = matchingEvents.length <= eventPageSize;
     eventPrevious.disabled = currentEventPage <= 1 || isLoadingEvents;
     eventNext.disabled = currentEventPage >= pageCount || isLoadingEvents;
-    eventPageLabel.textContent = `Halaman ${currentEventPage} dari ${pageCount}`;
+    eventPageLabel.textContent = locale === "en"
+      ? `Page ${currentEventPage} of ${pageCount}`
+      : `Halaman ${currentEventPage} dari ${pageCount}`;
 
     if (events.length > 0 && matchingEvents.length === 0) {
-      eventsStatus.textContent = "Event tidak ditemukan.";
+      eventsStatus.textContent = translate(locale, "Event tidak ditemukan.");
       eventsStatus.hidden = false;
     } else if (events.length === 0) {
-      eventsStatus.textContent = "Belum ada event yang tersedia.";
+      eventsStatus.textContent = translate(locale, "Belum ada event yang tersedia.");
       eventsStatus.hidden = false;
     } else {
       eventsStatus.hidden = true;
@@ -215,10 +219,10 @@ if (dialog) {
     renderEvents();
   });
   eventNext.addEventListener("click", () => {
-    const needle = eventSearch.value.trim().toLocaleLowerCase("id-ID");
+    const needle = eventSearch.value.trim().toLocaleLowerCase(locale === "en" ? "en-US" : "id-ID");
     const pageCount = Math.ceil(
       events.filter((event) =>
-        `${event.title} ${event.slug}`.toLocaleLowerCase("id-ID").includes(needle),
+        `${event.title} ${event.slug}`.toLocaleLowerCase(locale === "en" ? "en-US" : "id-ID").includes(needle),
       ).length / eventPageSize,
     );
     if (currentEventPage >= pageCount) return;
@@ -250,14 +254,14 @@ if (dialog) {
       (session) => session.salesStatus === "closed",
     ).length;
     sessionCount.textContent = sessions.length === 0
-      ? "Jadwal menyusul"
+      ? translate(locale, "Jadwal menyusul")
       : [
-          availableCount > 0 ? `${availableCount} dapat dipesan` : "",
-          comingSoonCount > 0 ? `${comingSoonCount} segera dibuka` : "",
+          availableCount > 0 ? (locale === "en" ? `${availableCount} available` : `${availableCount} dapat dipesan`) : "",
+          comingSoonCount > 0 ? (locale === "en" ? `${comingSoonCount} opening soon` : `${comingSoonCount} segera dibuka`) : "",
           sessions.some((session) => session.salesStatus === "sold_out")
-            ? "beberapa kuota habis"
+            ? translate(locale, "beberapa kuota habis")
             : "",
-          closedCount > 0 ? `${closedCount} pendaftaran ditutup` : "",
+          closedCount > 0 ? (locale === "en" ? `${closedCount} registration closed` : `${closedCount} pendaftaran ditutup`) : "",
         ].filter(Boolean).join(" · ");
 
     for (const session of sessions) {
@@ -288,14 +292,16 @@ if (dialog) {
         session.salesStatus === "sold_out" ? "sold-out" : "";
       seats.textContent =
         session.salesStatus === "sold_out" || session.seatsLeft === 0
-          ? "Kuota habis"
+          ? translate(locale, "Kuota habis")
           : session.salesStatus === "coming_soon"
             ? session.registrationOpensAt
-              ? `Penjualan dibuka ${formatDate(session.registrationOpensAt)}`
-              : "Penjualan segera dibuka"
+              ? `${translate(locale, "Penjualan dibuka")} ${formatDate(session.registrationOpensAt)}`
+              : translate(locale, "Penjualan segera dibuka")
             : session.salesStatus === "closed"
-              ? "Pendaftaran ditutup"
-              : `Sisa ${session.seatsLeft} slot`;
+              ? translate(locale, "Pendaftaran ditutup")
+              : locale === "en"
+                ? `${session.seatsLeft} ${session.seatsLeft === 1 ? "spot" : "spots"} left`
+                : `Sisa ${session.seatsLeft} slot`;
       bottom.append(price, seats);
       button.append(name, date, bottom);
       button.addEventListener("click", () => {
@@ -310,7 +316,7 @@ if (dialog) {
     if (sessions.length === 0) {
       const empty = document.createElement("p");
       empty.className = "load-message";
-      empty.textContent = "Jadwal sesi segera diumumkan.";
+      empty.textContent = translate(locale, "Jadwal sesi segera diumumkan.");
       sessionList.append(empty);
     }
     renderTotals();
@@ -322,7 +328,7 @@ if (dialog) {
   };
 
   const formatTime = (value: string) =>
-    new Intl.DateTimeFormat("id-ID", {
+    new Intl.DateTimeFormat(locale === "en" ? "en-US" : "id-ID", {
       hour: "2-digit",
       minute: "2-digit",
       timeZone: "Asia/Jakarta",
@@ -357,9 +363,9 @@ if (dialog) {
     bind("total", session ? formatIDR(session.price * quantity) : "–");
     bind(
       "footer-total",
-      session ? formatIDR(session.price * quantity) : "Pilih sesi untuk melihat total.",
+      session ? formatIDR(session.price * quantity) : translate(locale, "Pilih sesi untuk melihat total."),
     );
-    bind("max-quantity", `Maks. ${max} slot`);
+    bind("max-quantity", locale === "en" ? `Max ${max} spots` : `Maks. ${max} slot`);
     nextButton.disabled = !canContinue();
   };
 
@@ -369,7 +375,7 @@ if (dialog) {
     phoneInput.setCustomValidity(
       phoneInput.value.trim() &&
         !/^\+?[0-9][0-9\s().-]{7,29}$/.test(phoneInput.value.trim())
-        ? "Format nomor telepon tidak valid."
+        ? translate(locale, "Format nomor telepon tidak valid.")
         : "",
     );
     return Boolean(
@@ -401,7 +407,7 @@ if (dialog) {
     bind("session-time", formatTimeRange(session));
     bind("customer-name", name.value.trim());
     bind("customer-phone", phone.value.trim());
-    bind("quantity", `${quantity} slot${quantity === 1 ? "" : "s"}`);
+    bind("quantity", locale === "en" ? `${quantity} ${quantity === 1 ? "spot" : "spots"}` : `${quantity} slot`);
     bind("confirm-unit-price", formatIDR(session.price));
     bind("confirm-total", formatIDR(session.price * quantity));
   };
@@ -421,15 +427,15 @@ if (dialog) {
 
     bind(
       "heading",
-      step === 3 ? "Booking berhasil" : "Booking baru",
+      translate(locale, step === 3 ? "Booking berhasil dibuat" : "Booking baru"),
     );
     bind(
       "description",
       step === 1
-        ? "Pilih event dan sesi, lalu isi data pemesan."
+        ? translate(locale, "Pilih event dan sesi, lalu isi data pemesan.")
         : step === 2
-          ? "Periksa kembali detail booking sebelum dikonfirmasi."
-          : "Booking sudah tercatat di sistem.",
+          ? translate(locale, "Periksa kembali detail booking sebelum dikonfirmasi.")
+          : translate(locale, "Booking sudah tercatat di sistem."),
     );
     dialog.querySelector<HTMLElement>(".footer-total")!.hidden = step === 3;
     dialog.querySelector<HTMLButtonElement>('[data-action="cancel"]')!.hidden =
@@ -444,7 +450,7 @@ if (dialog) {
 
   const loadEvents = async () => {
     isLoadingEvents = true;
-    eventsStatus.textContent = "Memuat event...";
+    eventsStatus.textContent = translate(locale, "Memuat event...");
     eventsStatus.hidden = false;
     retryButton.hidden = true;
     nextButton.disabled = true;
@@ -454,7 +460,7 @@ if (dialog) {
       if (triggerEventSlug) {
         const event = events.find((item) => item.slug === triggerEventSlug);
         if (!event) {
-          throw new Error("Event yang dipilih tidak lagi tersedia untuk booking.");
+          throw new Error(translate(locale, "Event yang dipilih tidak lagi tersedia untuk booking."));
         }
 
         currentEventSlug = event.slug;
@@ -473,10 +479,10 @@ if (dialog) {
         if (triggerSession && !triggerSession.isBookable) {
           eventsStatus.textContent =
             triggerSession.salesStatus === "coming_soon"
-              ? "Penjualan sesi ini belum dibuka."
+              ? translate(locale, "Penjualan sesi ini belum dibuka.")
               : triggerSession.salesStatus === "sold_out"
-                ? "Sesi yang dipilih sudah penuh. Silakan pilih sesi lain."
-                : "Pendaftaran sesi ini sudah ditutup.";
+                ? translate(locale, "Sesi yang dipilih sudah penuh. Silakan pilih sesi lain.")
+                : translate(locale, "Pendaftaran sesi ini sudah ditutup.");
         }
         eventsStatus.hidden = !triggerSession || triggerSession.isBookable;
       }
@@ -490,17 +496,17 @@ if (dialog) {
       eventsStatus.textContent =
         error instanceof Error
           ? error.message
-          : "Daftar event gagal dimuat. Coba lagi.";
+          : translate(locale, "Daftar event gagal dimuat. Coba lagi.");
       eventsStatus.hidden = false;
       retryButton.hidden = false;
       renderSelections();
     } finally {
       isLoadingEvents = false;
       eventPrevious.disabled = currentEventPage <= 1;
-      const currentNeedle = eventSearch.value.trim().toLocaleLowerCase("id-ID");
+      const currentNeedle = eventSearch.value.trim().toLocaleLowerCase(locale === "en" ? "en-US" : "id-ID");
       const matchingEventCount = events.filter((event) =>
         `${event.title} ${event.slug}`
-          .toLocaleLowerCase("id-ID")
+          .toLocaleLowerCase(locale === "en" ? "en-US" : "id-ID")
           .includes(currentNeedle),
       ).length;
       eventNext.disabled =
@@ -510,7 +516,7 @@ if (dialog) {
   };
 
   const callbackUrl = () => {
-    const url = new URL(`${window.location.origin}/booking/after-payment`);
+    const url = new URL(`${window.location.origin}${locale === "en" ? "/en" : ""}/booking/after-payment`);
     url.searchParams.set("reference", "{referenceId}");
     return url.toString();
   };
@@ -535,7 +541,7 @@ if (dialog) {
     isSubmitting = true;
     confirmButton.disabled = true;
     confirmButton.setAttribute("aria-busy", "true");
-    confirmButton.textContent = "Memproses...";
+    confirmButton.textContent = translate(locale, "Memproses...");
     errorBox.hidden = true;
     try {
       const url = callbackUrl();
@@ -552,13 +558,15 @@ if (dialog) {
       bind("booking-code", result.code);
       bind(
         "payment-status",
-        result.paymentStatus === "paid" ? "Lunas" : "Menunggu pembayaran",
+        result.paymentStatus === "paid"
+          ? translate(locale, "Lunas")
+          : translate(locale, "Menunggu pembayaran"),
       );
       bind("success-total", formatIDR(result.totalAmount));
       bind(
         "hold-message",
         result.holdExpiresAt
-          ? `Selesaikan pembayaran sebelum ${formatDateTime(result.holdExpiresAt)}.`
+          ? `${translate(locale, "Selesaikan pembayaran sebelum")} ${formatDateTime(result.holdExpiresAt)}.`
           : "",
       );
       const paymentLink = dialog.querySelector<HTMLAnchorElement>(
@@ -579,18 +587,18 @@ if (dialog) {
       errorBox.textContent =
         error instanceof BookingError
           ? error.message
-          : "Terjadi kendala. Coba lagi sebentar.";
+          : translate(locale, "Terjadi kendala. Coba lagi sebentar.");
       errorBox.hidden = false;
     } finally {
       isSubmitting = false;
       confirmButton.disabled = false;
       confirmButton.removeAttribute("aria-busy");
-      confirmButton.textContent = "Konfirmasi booking";
+      confirmButton.textContent = translate(locale, "Konfirmasi booking");
     }
   };
 
   const formatDateTime = (value: string) =>
-    new Intl.DateTimeFormat("id-ID", {
+    new Intl.DateTimeFormat(locale === "en" ? "en-US" : "id-ID", {
       dateStyle: "medium",
       timeStyle: "short",
       timeZone: "Asia/Jakarta",
@@ -625,9 +633,9 @@ if (dialog) {
     idempotencyKey = "";
     previousAttempt = "";
     errorBox.hidden = true;
-    bind("footer-total", "Memuat sesi...");
+    bind("footer-total", translate(locale, "Memuat sesi..."));
     setStep(1);
-    eventsStatus.textContent = "Memuat event...";
+    eventsStatus.textContent = translate(locale, "Memuat event...");
     eventsStatus.hidden = false;
     retryButton.hidden = true;
     renderSelections();

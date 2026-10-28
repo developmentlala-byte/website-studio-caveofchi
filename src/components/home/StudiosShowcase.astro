@@ -1,15 +1,17 @@
 ---
 // StudiosShowcase.astro
 import type { PublicStudio } from '@/lib/api/studios';
+import { localizedPath, translate } from '@/lib/i18n';
 
 interface Props { studios: PublicStudio[] }
 const { studios } = Astro.props;
+const locale = Astro.locals.locale;
 const showcaseStudios = studios.map((studio) => {
   return {
     ...studio,
     ribbon: studio.code,
-    eyebrow: `Kapasitas ${studio.maxCapacity} orang`,
-    alt: `Interior ${studio.name}`,
+    eyebrow: `${translate(locale, 'Kapasitas')} ${studio.maxCapacity} ${translate(locale, 'orang')}`,
+    alt: locale === 'en' ? `${studio.name} interior` : `Interior ${studio.name}`,
     text: studio.shortDescription || studio.description || '',
   };
 });
@@ -26,13 +28,13 @@ const studioCountWord = NUMBER_WORDS[studioCount] ?? String(studioCount);
   <div class="container">
     <div class="section-head">
       <div>
-        <div class="eyebrow">{String(studioCount).padStart(2, '0')} / Meet our {studioCount === 1 ? 'space' : 'spaces'}</div>
-        <h2 class="heading">{studioCountWord} {studioCount === 1 ? 'cave' : 'caves'}.<br /><em class="script">{studioCountWord} energies.</em></h2>
+        <div class="eyebrow">{String(studioCount).padStart(2, '0')} / {translate(locale, 'Meet our')} {translate(locale, studioCount === 1 ? 'space' : 'spaces')}</div>
+        <h2 class="heading">{studioCountWord} {translate(locale, studioCount === 1 ? 'cave' : 'caves')}.<br /><em class="script">{studioCountWord} {locale === 'en' ? 'energies.' : 'energi.'}</em></h2>
       </div>
       <p>
         {studioCount === 1
-          ? 'Satu ruang intim untuk hadir, berkarya, dan terhubung sepenuhnya.'
-          : 'Setiap ruang punya karakter berbeda, dengan niat yang sama: menciptakan tempat untuk hadir seutuhnya.'}
+          ? translate(locale, 'Satu ruang intim untuk hadir, berkarya, dan terhubung sepenuhnya.')
+          : translate(locale, 'Setiap ruang punya karakter berbeda, dengan niat yang sama: menciptakan tempat untuk hadir seutuhnya.')}
       </p>
     </div>
     <div class="studio-grid">
@@ -44,15 +46,15 @@ const studioCountWord = NUMBER_WORDS[studioCount] ?? String(studioCount);
           <div class="studio-card-content">
             <div>
               <div class="eyebrow">{s.eyebrow}</div>
-              <h3><a href={`/studios/${s.slug}`}>{s.name}</a></h3>
+              <h3><a href={localizedPath(locale, `/studios/${s.slug}`)}>{s.name}</a></h3>
               <p>{s.text}</p>
             </div>
-            <a class="circle-arrow" href={`/studios/${s.slug}`} aria-label={`Lihat detail ${s.name}`}>↗</a>
+            <a class="circle-arrow" href={localizedPath(locale, `/studios/${s.slug}`)} aria-label={`${translate(locale, 'Lihat detail')} ${s.name}`}>↗</a>
           </div>
         </article>
       ))}
     </div>
-    {studioCount === 0 && <p class="empty-studios">Studio belum tersedia saat ini.</p>}
+    {studioCount === 0 && <p class="empty-studios">{translate(locale, 'Studio belum tersedia saat ini.')}</p>}
   </div>
 </section>
 <style>

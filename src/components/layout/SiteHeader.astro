@@ -1,22 +1,33 @@
 ---
 import Brand from '@/components/layout/Brand.astro';
 import { NAV_LINKS } from '@/lib/site';
-
+import { localizedPath, translate } from '@/lib/i18n';
 interface Props { variant?: 'overlay' | 'solid' }
 const { variant = 'overlay' } = Astro.props;
-const path = Astro.url.pathname;
+const locale = Astro.locals.locale;
+const path = Astro.locals.localePath;
+const normalizedPath = path.split(/[?#]/, 1)[0].replace(/^\/en(?=\/|$)/, '') || '/';
 const isCurrent = (href: string) =>
-  !href.includes('#') && (href === path || path.startsWith(href + '/'));
+  !href.includes('#') && (href === normalizedPath || normalizedPath.startsWith(href + '/'));
 ---
 <header class:list={['header', variant]}>
   <Brand />
-  <nav class="nav" id="site-nav" aria-label="Navigasi utama">
+  <nav class="nav" id="site-nav" aria-label={translate(locale, 'Navigasi utama')}>
     {NAV_LINKS.map((l) => (
-      <a href={l.href} aria-current={isCurrent(l.href) ? 'page' : undefined}>{l.label}</a>
+      <a href={localizedPath(locale, l.href)} aria-current={isCurrent(l.href) ? 'page' : undefined}>{translate(locale, l.label)}</a>
     ))}
-    <a class="nav-book" href="/experiences" data-book>Pesan tempat ↗</a>
+    <a class="nav-book" href={localizedPath(locale, '/experiences')} data-book>{translate(locale, 'Pesan tempat ↗')}</a>
   </nav>
-  <button class="menu-btn" type="button" aria-label="Buka navigasi"
+  <div class="language-switcher" role="group" aria-label={locale === 'en' ? 'Choose language' : 'Pilih bahasa'}>
+    <a href={localizedPath('id', path)} lang="id" hreflang="id"
+      aria-current={locale === 'id' ? 'page' : undefined}
+      aria-label="Bahasa Indonesia" title="Bahasa Indonesia">ID</a>
+    <span aria-hidden="true">/</span>
+    <a href={localizedPath('en', path)} lang="en" hreflang="en"
+      aria-current={locale === 'en' ? 'page' : undefined}
+      aria-label="English" title="English">EN</a>
+  </div>
+  <button class="menu-btn" type="button" aria-label={locale === 'en' ? 'Open navigation' : 'Buka navigasi'}
           aria-expanded="false" aria-controls="site-nav">☰</button>
 </header>
 
@@ -48,6 +59,34 @@ const isCurrent = (href: string) =>
     font-weight: 600;
     letter-spacing: 0.03em;
     line-height: normal;
+  }
+
+  .language-switcher {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 7px;
+    margin-left: 22px;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+
+  .language-switcher a {
+    padding: 5px 2px;
+    opacity: 0.68;
+    transition: opacity 180ms ease;
+  }
+
+  .language-switcher a:hover,
+  .language-switcher a[aria-current="page"] {
+    opacity: 1;
+  }
+
+  .language-switcher a:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 3px;
   }
 
   .nav a:not(.nav-book) {
@@ -102,6 +141,10 @@ const isCurrent = (href: string) =>
       display: inline-block;
     }
 
+    .language-switcher {
+      margin: 0 0 0 auto;
+    }
+
     .nav {
       position: absolute;
       top: 100%;
@@ -132,7 +175,8 @@ const isCurrent = (href: string) =>
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .nav a:not(.nav-book) {
+    .nav a:not(.nav-book),
+    .language-switcher a {
       transition: none;
     }
   }

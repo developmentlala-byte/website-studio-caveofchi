@@ -1,5 +1,9 @@
+---
+import { translate } from '@/lib/i18n';
+const locale = Astro.locals.locale;
+---
 <div class="top-note">
-  A little slower, a little closer. &nbsp;✳&nbsp; Welcome to our creative sanctuary
+  {translate(locale, 'A little slower, a little closer. ✳ Welcome to our creative sanctuary')}
 </div>
 <style>
   .top-note {

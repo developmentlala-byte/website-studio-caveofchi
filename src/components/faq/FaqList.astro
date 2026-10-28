@@ -1,11 +1,13 @@
 ---
 import { FAQ } from "@/data/faq";
+import { translate } from "@/lib/i18n";
+const locale = Astro.locals.locale;
 ---
 <div class="faq-list">
   {FAQ.map((item, index) => (
     <details open={index === 0}>
-      <summary>{item.q}</summary>
-      <p>{item.a}</p>
+      <summary>{translate(locale, item.q)}</summary>
+      <p>{translate(locale, item.a)}</p>
     </details>
   ))}
 </div>
