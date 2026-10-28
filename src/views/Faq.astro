@@ -1,0 +1,22 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import FaqList from "@/components/faq/FaqList.astro";
+import PageHeader from "@/components/layout/PageHeader.astro";
+import { createT, toLocale } from "@/i18n";
+import { messages } from "./Faq.messages";
+
+const t = createT(toLocale(Astro.currentLocale), messages);
+---
+<BaseLayout
+  title={t("seoTitle")}
+  description={t("seoDescription")}
+>
+  <PageHeader
+    eyebrow={t("eyebrow")}
+    title={t("title")}
+    description={t("description")}
+  />
+  <section class="section container">
+    <FaqList />
+  </section>
+</BaseLayout>

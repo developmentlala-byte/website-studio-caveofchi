@@ -1,35 +1,53 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import { localizedPath, translate } from '@/lib/i18n';
-const locale = Astro.locals.locale;
+import { createT, localizedPath, toLocale } from "@/i18n";
+import { messages } from "./BookingStatus.messages";
+const locale = toLocale(Astro.currentLocale);
+const t = createT(locale, messages);
 ---
 <BaseLayout
-  title={translate(locale, "Detail booking — Cave of Chi")}
-  description={translate(locale, "Detail event dan status pembayaran booking Cave of Chi.")}
+  title={t("seoTitle")}
+  description={t("seoDescription")}
   noindex
 >
-  <section class="booking-page section container" aria-labelledby="booking-title">
+  <section class="booking-page section container" aria-labelledby="booking-title" data-booking-page>
     <div class="eyebrow">Booking · Midtrans</div>
-    <h1 id="booking-title" class="heading">{translate(locale, "Detail booking Anda")}</h1>
+    <h1 id="booking-title" class="heading">{t("title")}</h1>
     <p class="lead" data-message aria-live="polite">
-      {translate(locale, "Kami sedang memeriksa status pembayaran Anda. Status booking hanya dikonfirmasi setelah pembayaran diverifikasi oleh Midtrans.")}
+      {t("checking")}
     </p>
+    <span
+      hidden
+      data-booking-labels
+      data-missing-reference={t("missingReference")}
+      data-paid={t("paid")}
+      data-pending={t("pending")}
+      data-expired={t("expired")}
+      data-failed={t("failed")}
+      data-guest={t("guest")}
+      data-confirmed={t("confirmed")}
+      data-review={t("review")}
+      data-payment-failed={t("paymentFailed")}
+      data-processing={t("processing")}
+      data-awaiting-confirmation={t("awaitingConfirmation")}
+      data-status-unavailable={t("statusUnavailable")}
+    ></span>
     <dl class="booking-details" data-details hidden>
-      <div><dt>{translate(locale, "Kode booking")}</dt><dd data-code></dd></div>
-      <div><dt>{translate(locale, "Status pembayaran")}</dt><dd data-payment-status></dd></div>
+      <div><dt>{t("bookingCode")}</dt><dd data-code></dd></div>
+      <div><dt>{t("paymentStatus")}</dt><dd data-payment-status></dd></div>
       <div><dt>Event</dt><dd data-event></dd></div>
-      <div><dt>{translate(locale, "Studio")}</dt><dd data-studio></dd></div>
-      <div><dt>{translate(locale, "Jadwal")}</dt><dd data-date></dd></div>
-      <div><dt>{translate(locale, "Jumlah peserta")}</dt><dd data-quantity></dd></div>
-      <div><dt>{translate(locale, "Harga per peserta")}</dt><dd data-unit-price></dd></div>
-      <div><dt>{translate(locale, "Total pembayaran")}</dt><dd data-total></dd></div>
+      <div><dt>{t("studio")}</dt><dd data-studio></dd></div>
+      <div><dt>{t("schedule")}</dt><dd data-date></dd></div>
+      <div><dt>{t("guestCount")}</dt><dd data-quantity></dd></div>
+      <div><dt>{t("pricePerGuest")}</dt><dd data-unit-price></dd></div>
+      <div><dt>{t("totalPayment")}</dt><dd data-total></dd></div>
     </dl>
     <div class="status-actions">
       <a class="receipt-link" data-receipt hidden target="_blank" rel="noopener noreferrer">
-        {translate(locale, "Cetak / simpan kwitansi")}
+        {t("receipt")}
       </a>
-      <button type="button" data-retry hidden>{translate(locale, "Periksa status lagi")}</button>
-      <a href={localizedPath(locale, "/experiences")}>{translate(locale, "Lihat event lainnya")}</a>
+      <button type="button" data-retry hidden>{t("retry")}</button>
+      <a href={localizedPath(locale, "/experiences")}>{t("moreEvents")}</a>
     </div>
   </section>
 </BaseLayout>
@@ -41,9 +59,15 @@ const locale = Astro.locals.locale;
     fetchBookingStatus,
   } from "@/lib/api/bookings";
   import { formatIDR, formatDateShort, formatTime } from "@/lib/format";
-  import { translate } from "@/lib/i18n";
 
   const locale = document.documentElement.lang === "en" ? "en" : "id";
+  const labelsElement = document.querySelector<HTMLElement>("[data-booking-labels]");
+  if (!labelsElement) throw new Error("Booking status labels are missing.");
+  const label = (key: string): string => {
+    const value = labelsElement.dataset[key];
+    if (value === undefined) throw new Error(`Missing booking status label: ${key}`);
+    return value;
+  };
   const message = document.querySelector<HTMLElement>("[data-message]");
   const details = document.querySelector<HTMLDListElement>("[data-details]");
   const retryButton = document.querySelector<HTMLButtonElement>("[data-retry]");
@@ -63,7 +87,7 @@ const locale = Astro.locals.locale;
     if (retryButton) retryButton.disabled = true;
 
     if (!reference) {
-      if (message) message.textContent = translate(locale, "Kode booking tidak ditemukan. Silakan hubungi kami jika pembayaran Anda sudah terpotong.");
+      if (message) message.textContent = label("missingReference");
       checking = false;
       if (retryButton) retryButton.hidden = false;
       return;
@@ -75,45 +99,45 @@ const locale = Astro.locals.locale;
       if (retryButton) retryButton.hidden = true;
       setText("[data-code]", booking.code);
       setText("[data-payment-status]", booking.paymentStatus === "paid"
-        ? translate(locale, "Lunas")
+        ? label("paid")
         : booking.paymentStatus === "pending"
-          ? translate(locale, "Menunggu pembayaran")
+          ? label("pending")
           : booking.paymentStatus === "expired"
-            ? translate(locale, "Kedaluwarsa")
-            : translate(locale, "Gagal"));
+            ? label("expired")
+            : label("failed"));
       setText("[data-event]", booking.eventName);
       setText("[data-studio]", booking.studioName);
-      setText("[data-date]", `${formatDateShort(new Date(booking.startsAt), locale)} · ${formatTime(new Date(booking.startsAt))} WIB`);
-      setText("[data-quantity]", `${booking.quantity} ${translate(locale, "peserta")}`);
-      setText("[data-unit-price]", `${formatIDR(booking.unitPrice)} / ${translate(locale, "peserta")}`);
-      setText("[data-total]", formatIDR(booking.totalAmount));
+      setText("[data-date]", `${formatDateShort(new Date(booking.startsAt), locale)} · ${formatTime(new Date(booking.startsAt), locale)} WIB`);
+      setText("[data-quantity]", `${booking.quantity} ${label("guest")}`);
+      setText("[data-unit-price]", `${formatIDR(booking.unitPrice, locale)} / ${label("guest")}`);
+      setText("[data-total]", formatIDR(booking.totalAmount, locale));
       if (receiptLink) {
         receiptLink.href = bookingReceiptUrl(booking.code);
         receiptLink.hidden = booking.paymentStatus !== "paid";
       }
 
       if (booking.bookingStatus === "confirmed" && booking.paymentStatus === "paid") {
-        if (message) message.textContent = translate(locale, "Pembayaran berhasil dikonfirmasi oleh Sistem. Booking Anda sudah aman.");
+        if (message) message.textContent = label("confirmed");
         attempts = 20;
       } else if (booking.bookingStatus === "payment_review") {
-        if (message) message.textContent = translate(locale, "Pembayaran diterima dan sedang diverifikasi tim kami. Simpan kode booking ini.");
+        if (message) message.textContent = label("review");
         attempts = 20;
       } else if (["expired", "cancelled"].includes(booking.bookingStatus) || booking.paymentStatus === "failed") {
-        if (message) message.textContent = translate(locale, "Pembayaran belum berhasil dan penahanan kuota telah berakhir. Silakan buat booking baru untuk mencoba lagi.");
+        if (message) message.textContent = label("paymentFailed");
         attempts = 20;
       } else if (attempts < 20) {
-        if (message) message.textContent = translate(locale, "Pembayaran masih diproses. Status akan diperiksa kembali secara berkala.");
+        if (message) message.textContent = label("processing");
         attempts += 1;
         window.setTimeout(() => void checkStatus(), 3000);
       } else {
-        if (message) message.textContent = translate(locale, "Status masih menunggu konfirmasi Midtrans. Anda dapat memeriksanya kembali sebentar lagi.");
+        if (message) message.textContent = label("awaitingConfirmation");
         if (retryButton) retryButton.hidden = false;
       }
     } catch (error) {
       if (message) {
         message.textContent = error instanceof BookingError
           ? error.message
-          : translate(locale, "Status belum dapat diperiksa. Periksa koneksi Anda lalu coba lagi.");
+          : label("statusUnavailable");
       }
       if (retryButton) retryButton.hidden = false;
     } finally {

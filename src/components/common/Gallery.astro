@@ -1,6 +1,7 @@
 ---
-import { translate } from '@/lib/i18n';
-const locale = Astro.locals.locale;
+import { createT, toLocale } from '@/i18n';
+import { messages } from './Gallery.messages';
+const t = createT(toLocale(Astro.currentLocale), messages);
 interface GalleryImage { url: string; altText?: string | null }
 interface Props { images: GalleryImage[]; label: string; ratio?: string }
 const { images, label, ratio = '3 / 2' } = Astro.props;
@@ -8,7 +9,7 @@ const total = images.length;
 const cover = images[0];
 ---
 {cover && (
-  <div class="gallery" data-gallery role="group" aria-label={`${translate(locale, 'Galeri')} ${label}`} style={`--ratio:${ratio}`}>
+  <div class="gallery" data-gallery role="group" aria-label={`${t('gallery')} ${label}`} style={`--ratio:${ratio}`}>
     <div class="stage" data-stage-wrap>
       <img
         class="stage-img"
@@ -22,13 +23,13 @@ const cover = images[0];
 
       {total > 1 && (
         <>
-          <button type="button" class="nav prev" data-prev aria-label={translate(locale, 'Foto sebelumnya')}>
+          <button type="button" class="nav prev" data-prev aria-label={t('previousPhoto')}>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M15 5l-7 7 7 7" />
             </svg>
           </button>
-          <button type="button" class="nav next" data-next aria-label={translate(locale, 'Foto berikutnya')}>
+          <button type="button" class="nav next" data-next aria-label={t('nextPhoto')}>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M9 5l7 7-7 7" />
@@ -40,15 +41,15 @@ const cover = images[0];
     </div>
 
     {total > 1 && (
-      <ul class="thumbs" aria-label={translate(locale, 'Pilih foto')}>
+      <ul class="thumbs" aria-label={t('choosePhoto')}>
         {images.map((img, i) => (
           <li>
             <button
               type="button"
               class="thumb"
               data-src={img.url}
-              data-alt={img.altText || `Foto ${label} ${i + 1}`}
-              aria-label={`${translate(locale, 'Lihat foto')} ${i + 1}`}
+              data-alt={img.altText || t('photoAlt', { label, number: i + 1 })}
+              aria-label={`${t('viewPhoto')} ${i + 1}`}
               aria-current={i === 0 ? 'true' : undefined}
             >
               <img src={img.url} alt="" loading="lazy" decoding="async" />

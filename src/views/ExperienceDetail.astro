@@ -1,0 +1,251 @@
+---
+import Gallery from "@/components/common/Gallery.astro";
+import BookButton from "@/components/booking/BookButton.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { formatDateShort, formatIDR, formatTime, getDurationParts } from "@/lib/format";
+import { getCategoryLabel } from "@/lib/site";
+import { getEventBySlug } from "@/lib/events";
+import { createT, localizedPath, toLocale } from "@/i18n";
+import { messages } from "./ExperienceDetail.messages";
+
+interface Props {
+  slug: string;
+}
+
+const { slug } = Astro.props;
+const event = await getEventBySlug(slug);
+const locale = toLocale(Astro.currentLocale);
+const t = createT(locale, messages);
+const formatDuration = (duration: number) => {
+  const { hours, minutes } = getDurationParts(duration);
+  return [
+    hours > 0 ? t(hours === 1 ? "oneHour" : "hours", { count: hours }) : "",
+    minutes > 0
+      ? t(minutes === 1 ? "oneMinute" : "minutes", { count: minutes })
+      : "",
+  ].filter(Boolean).join(" ");
+};
+if (!event) Astro.response.status = 404;
+const data = event?.data;
+const sessions = data?.sessions ?? [];
+const gallery = data
+  ? [
+      ...(data.imageUrl
+        ? [{ url: data.imageUrl, altText: `Suasana ${data.title}` }]
+        : []),
+      ...data.images,
+    ].filter((image, index, images) =>
+      images.findIndex((candidate) => candidate.url === image.url) === index,
+    )
+  : [];
+const featuredSession = sessions[0];
+const endsAt = featuredSession
+  ? new Date(featuredSession.startsAt.getTime() + featuredSession.durationMinutes * 60_000)
+  : null;
+const jsonLd = data && featuredSession && endsAt
+  ? JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Event",
+      name: data.title,
+      description: data.subtitle,
+      startDate: featuredSession.startsAt.toISOString(),
+      endDate: endsAt.toISOString(),
+      eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+      location: { "@type": "Place", name: featuredSession.studioName },
+      offers: { "@type": "Offer", price: featuredSession.price, priceCurrency: "IDR" },
+    }).replace(/</g, "\\u003c")
+  : null;
+const salesLabel = (session: (typeof sessions)[number]) => {
+  if (session.salesStatus === "coming_soon") {
+    return session.registrationOpensAt
+      ? `${t("salesOpen")} ${formatDateShort(session.registrationOpensAt, locale)}`
+      : t("salesComing");
+  }
+  if (session.salesStatus === "sold_out") return t("soldOut");
+  if (session.salesStatus === "closed") return t("registrationClosed");
+  return t(session.seatsLeft === 1 ? "oneSpotLeft" : "spotsLeft", {
+    count: session.seatsLeft,
+  });
+};
+---
+<BaseLayout title={data ? `${data.title} — Cave of Chi` : `${t("notFoundTitle")} — Cave of Chi`} description={data?.subtitle ?? t("notFoundTitle")}>
+  {data && event ? (
+  <>
+  <Fragment slot="head">
+    {jsonLd && <script type="application/ld+json" set:html={jsonLd} />}
+  </Fragment>
+
+  <article class="detail section container">
+    <a class="back-link" href={localizedPath(locale, "/experiences")}>← {t("allExperiences")}</a>
+    <div class="eyebrow">{getCategoryLabel(data.category)}</div>
+    <h1 class="heading">{data.title}</h1>
+    <p class="lead">{data.subtitle}</p>
+    <Gallery images={gallery} label={data.title} />
+
+    <dl class="facts">
+      <div><dt>{t("schedule")}</dt><dd>{sessions.length > 0 ? t("sessionCount", { count: sessions.length }) : t("announcedSoon")}</dd></div>
+      <div><dt>{t("duration")}</dt><dd>{featuredSession ? formatDuration(featuredSession.durationMinutes) : t("announcedSoon")}</dd></div>
+      <div><dt>{t("location")}</dt><dd>{featuredSession?.studioName ?? t("announcedSoon")}</dd></div>
+      <div><dt>{t("price")}</dt><dd>{sessions.length > 0 ? `${t("startingAt")} ${formatIDR(Math.min(...sessions.map((session) => session.price)), locale)}` : t("announcedSoon")}</dd></div>
+    </dl>
+
+    {data.description?.split("\n\n").map((paragraph) => <p class="description">{paragraph}</p>)}
+    {data.included.length > 0 && (
+      <>
+        <h2>{t("included")}</h2>
+        <ul>{data.included.map((item) => <li>{item}</li>)}</ul>
+      </>
+    )}
+
+    <h2>{t("availability")}</h2>
+    {sessions.length === 0 ? (
+      <p class="coming-soon">{t("scheduleAndPriceComing")}</p>
+    ) : (
+    <div class="detail-sessions">
+      {sessions.map((session) => (
+        <div class="detail-session">
+          <div class="session-info">
+            <strong>{formatDateShort(session.startsAt, locale)} · {formatTime(session.startsAt, locale)} WIB</strong>
+            <small>{session.studioName} · {formatDuration(session.durationMinutes)} · <span data-seats-left={session.sessionId}>{salesLabel(session)}</span></small>
+          </div>
+          <div class="session-offer">
+            <strong>{formatIDR(session.price, locale)}</strong>
+            <BookButton event={event} session={session}>
+              {session.isBookable
+                ? t("bookNow")
+                : session.salesStatus === "coming_soon"
+                ? t("openingSoon")
+                  : session.salesStatus === "sold_out"
+                  ? t("soldOut")
+                  : t("registrationClosed")}
+            </BookButton>
+          </div>
+        </div>
+      ))}
+    </div>
+    )}
+  </article>
+  </>
+  ) : (
+    <section class="detail section container">
+      <h1 class="heading">{t("notFoundTitle")}</h1>
+      <p class="lead">{t("notFoundDescription")}</p>
+      <a class="back-link" href={localizedPath(locale, "/experiences")}>← {t("allExperiences")}</a>
+    </section>
+  )}
+</BaseLayout>
+
+<style>
+  .back-link {
+    display: inline-block;
+    margin-bottom: 28px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .detail .heading {
+    margin: 12px 0;
+  }
+
+  .lead {
+    margin: 0 0 24px;
+    color: var(--muted);
+  }
+
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin: 26px 0;
+    padding: 20px 0;
+    border-block: 1px solid var(--line);
+  }
+
+  .facts div {
+    display: grid;
+    gap: 5px;
+  }
+
+  .facts dt {
+    color: var(--muted);
+    font-size: 10px;
+    text-transform: uppercase;
+  }
+
+  .facts dd {
+    margin: 0;
+    color: var(--umber);
+    font-size: 13px;
+  }
+
+  .description {
+    max-width: 720px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+
+  .detail h2 {
+    color: var(--umber);
+    font-family: var(--font-heading);
+    font-size: 28px;
+    font-weight: 500;
+  }
+
+  .detail-sessions {
+    border-top: 1px solid var(--line);
+  }
+
+  .detail-session {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .session-info,
+  .session-offer {
+    display: grid;
+    gap: 7px;
+  }
+
+  .session-info strong,
+  .session-offer strong {
+    color: var(--umber);
+    font-size: 13px;
+  }
+
+  .session-info small {
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .session-offer {
+    justify-items: end;
+  }
+
+  .detail ul {
+    margin-bottom: 24px;
+    color: var(--muted);
+    line-height: 1.9;
+  }
+
+  @media (max-width: 740px) {
+    .facts {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .detail-session {
+      align-items: start;
+      flex-direction: column;
+    }
+
+    .session-offer {
+      width: 100%;
+      align-items: center;
+      justify-items: start;
+      grid-template-columns: 1fr auto;
+    }
+  }
+</style>

@@ -1,24 +1,32 @@
 ---
 import Brand from '@/components/layout/Brand.astro';
-import { NAV_LINKS } from '@/lib/site';
-import { localizedPath, translate } from '@/lib/i18n';
+import { createT, localizedPath, toLocale } from '@/i18n';
+import { messages } from './SiteHeader.messages';
 interface Props { variant?: 'overlay' | 'solid' }
 const { variant = 'overlay' } = Astro.props;
-const locale = Astro.locals.locale;
-const path = Astro.locals.localePath;
+const locale = toLocale(Astro.currentLocale);
+const t = createT(locale, messages);
+const path = Astro.url.pathname + Astro.url.search;
 const normalizedPath = path.split(/[?#]/, 1)[0].replace(/^\/en(?=\/|$)/, '') || '/';
 const isCurrent = (href: string) =>
   !href.includes('#') && (href === normalizedPath || normalizedPath.startsWith(href + '/'));
+const links = [
+  { href: '/about', label: 'story' },
+  { href: '/#spaces', label: 'spaces' },
+  { href: '/experiences', label: 'experiences' },
+  { href: '/schedule', label: 'schedule' },
+  { href: '/about#community', label: 'community' },
+] as const;
 ---
 <header class:list={['header', variant]}>
   <Brand />
-  <nav class="nav" id="site-nav" aria-label={translate(locale, 'Navigasi utama')}>
-    {NAV_LINKS.map((l) => (
-      <a href={localizedPath(locale, l.href)} aria-current={isCurrent(l.href) ? 'page' : undefined}>{translate(locale, l.label)}</a>
+  <nav class="nav" id="site-nav" aria-label={t('mainNavigation')}>
+    {links.map((link) => (
+      <a href={localizedPath(locale, link.href)} aria-current={isCurrent(link.href) ? 'page' : undefined}>{t(link.label)}</a>
     ))}
-    <a class="nav-book" href={localizedPath(locale, '/experiences')} data-book>{translate(locale, 'Pesan tempat ↗')}</a>
+    <a class="nav-book" href={localizedPath(locale, '/experiences')} data-book>{t('bookSeat')}</a>
   </nav>
-  <div class="language-switcher" role="group" aria-label={locale === 'en' ? 'Choose language' : 'Pilih bahasa'}>
+  <div class="language-switcher" role="group" aria-label={t('chooseLanguage')}>
     <a href={localizedPath('id', path)} lang="id" hreflang="id"
       aria-current={locale === 'id' ? 'page' : undefined}
       aria-label="Bahasa Indonesia" title="Bahasa Indonesia">ID</a>
@@ -27,7 +35,7 @@ const isCurrent = (href: string) =>
       aria-current={locale === 'en' ? 'page' : undefined}
       aria-label="English" title="English">EN</a>
   </div>
-  <button class="menu-btn" type="button" aria-label={locale === 'en' ? 'Open navigation' : 'Buka navigasi'}
+  <button class="menu-btn" type="button" aria-label={t('openNavigation')}
           aria-expanded="false" aria-controls="site-nav">☰</button>
 </header>
 

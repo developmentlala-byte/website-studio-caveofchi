@@ -1,45 +1,42 @@
 ---
-import { translate } from '@/lib/i18n';
-const locale = Astro.locals.locale;
+import { createT, toLocale } from '@/i18n';
+import { messages } from './CommunityBand.messages';
+const t = createT(toLocale(Astro.currentLocale), messages);
 
 const PILLARS = [
   {
-    title: 'Create',
-    text: 'Ruang eksplorasi untuk mencipta sesuatu dengan tangan sendiri, tanpa tekanan.',
+    title: 'createTitle',
+    text: 'createDescription',
     svg: '<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"/>',
   },
   {
-    title: 'Heal',
-    text: 'Ritual mindful untuk memulihkan energi dan menemukan jeda dari keseharian.',
+    title: 'healTitle',
+    text: 'healDescription',
     svg: '<circle cx="12" cy="12" r="8"/>',
   },
   {
-    title: 'Grow',
-    text: 'Komunitas hangat yang menyambut setiap orang apa adanya.',
+    title: 'growTitle',
+    text: 'growDescription',
     svg: '<path d="M12 3.5 20.5 12 12 20.5 3.5 12Z"/>',
   },
-];
+] as const;
 const STAR = '<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"/>';
 ---
 <section class="community section" id="community">
   <div class="container community-inner">
     <svg class="community-star" viewBox="0 0 24 24" width="18" height="18" fill="none"
       stroke="currentColor" stroke-width="1.2" stroke-linecap="round" aria-hidden="true" set:html={STAR} />
-    <div class="eyebrow">06 / {translate(locale, 'A space to belong')}</div>
-    <h2 class="heading">{translate(locale, 'A community of becoming.')}</h2>
-    <p class="community-lead">
-      {locale === 'en'
-        ? 'We believe beautiful things happen when people gather with intention. Meet new friends, collaborate, and grow together in a space that welcomes every version of you.'
-        : 'Kami percaya hal-hal indah terjadi ketika orang berkumpul dengan niat baik. Temukan teman baru, berkolaborasi, dan bertumbuh bersama di ruang yang menerima setiap versi dirimu.'}
-    </p>
+    <div class="eyebrow">06 / {t('eyebrow')}</div>
+    <h2 class="heading">{t('title')}</h2>
+    <p class="community-lead">{t('description')}</p>
     <div class="pillars">
       {PILLARS.map((p) => (
         <div class="pillar">
           <svg class="pillar-icon" viewBox="0 0 24 24" width="22" height="22" fill="none"
             stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"
             aria-hidden="true" set:html={p.svg} />
-          <h3>{p.title}</h3>
-          <p>{translate(locale, p.text)}</p>
+          <h3>{t(p.title)}</h3>
+          <p>{t(p.text)}</p>
         </div>
       ))}
     </div>

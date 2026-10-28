@@ -1,39 +1,40 @@
 ---
-import { translate } from '@/lib/i18n';
-const locale = Astro.locals.locale;
+import { createT, toLocale } from '@/i18n';
+import { messages } from './Intro.messages';
+const t = createT(toLocale(Astro.currentLocale), messages);
 
 const STATS = [
-  { value: '02', label: 'Intimate caves' },
-  { value: '10', label: 'Seats per studio*' },
-  { value: '∞', label: 'Ways to connect' },
-];
+  { value: '02', label: 'intimateCaves' },
+  { value: '10', label: 'guestsPerClass' },
+  { value: '∞', label: 'waysToConnect' },
+] as const;
 ---
 <section class="intro section" id="story">
   <div class="container intro-inner">
     <div class="intro-head">
-      <div class="eyebrow">01 / {translate(locale, 'The idea behind our space')}</div>
+      <div class="eyebrow">01 / {t('eyebrow')}</div>
       <h2 class="heading">
-        {translate(locale, 'More than')}<br />
-        {translate(locale, 'a')} <em class="script-cst-color">{translate(locale, 'place.')}</em><br />
-        {translate(locale, 'A feeling.')}
+        {t('titleLead')}<br />
+        {t('titleArticle')} <em class="script-cst-color">{t('titleNoun')}</em><br />
+        {t('titleEnd')}
       </h2>
     </div>
     <div class="intro-body">
       <p>
-        {translate(locale, 'Cave of Chi lahir dari keyakinan sederhana: terkadang yang kita butuhkan hanyalah sebuah ruang untuk kembali terhubung—dengan diri sendiri, dengan karya, dan dengan orang-orang baru.')}
+        {t('storyFirst')}
       </p>
       <p>
-        {translate(locale, 'Dari merangkai bunga sampai sound healing, setiap pengalaman dirancang terasa personal, hangat, dan jauh dari hiruk-pikuk keseharian.')}
+        {t('storySecond')}
       </p>
       <div class="intro-stats">
         {STATS.map((s) => (
           <div class="stat">
             <strong>{s.value}</strong>
-            <span>{translate(locale, s.label)}</span>
+            <span>{t(s.label)}</span>
           </div>
         ))}
       </div>
-      <p class="intro-note">*{translate(locale, 'Kapasitas konsep awal, disesuaikan dengan jenis aktivitas.')}</p>
+      <p class="intro-note">*{t('capacityNote')}</p>
     </div>
   </div>
 </section>

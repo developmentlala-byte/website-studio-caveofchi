@@ -9,8 +9,8 @@ import SiteHeader from '@/components/layout/SiteHeader.astro';
 import SiteFooter from '@/components/layout/SiteFooter.astro';
 import BookingModal from '@/components/booking/BookingModal.astro';
 import logo from '@/assets/images/logo-cave-of-chi.png';
-import { SITE } from '@/lib/site';
-import { localizedPath, translate } from '@/lib/i18n';
+import { createT, localizedPath, toLocale } from '@/i18n';
+import { messages } from './BaseLayout.messages';
 
 interface Props {
   title: string;
@@ -24,10 +24,11 @@ const {
   headerVariant = 'solid', noindex = false,
 } = Astro.props;
 
-const locale = Astro.locals.locale;
-const pagePath = Astro.locals.localePath.split(/[?#]/, 1)[0].replace(/\/+$/, '') || '/';
-const localizedTitle = translate(locale, title);
-const localizedDescription = translate(locale, description);
+const locale = toLocale(Astro.currentLocale);
+const t = createT(locale, messages);
+const pagePath = Astro.url.pathname.replace(/\/+$/, '') || '/';
+const localizedTitle = title;
+const localizedDescription = description;
 const siteOrigin = Astro.site ?? new URL(Astro.url.origin);
 const canonicalPath = pagePath;
 const canonical = new URL(canonicalPath, siteOrigin);
@@ -45,7 +46,7 @@ const structuredData = JSON.stringify({
       name: 'Cave of Chi',
       url: siteUrl,
       logo: new URL(logo.src, siteOrigin).toString(),
-      description: translate(locale, SITE.description),
+      description: t('siteDescription'),
     },
     {
       '@type': 'WebSite',
@@ -69,7 +70,7 @@ const structuredData = JSON.stringify({
 }).replaceAll('<', '\\u003c');
 ---
 <!doctype html>
-<html lang={locale === 'en' ? 'en' : 'id'}>
+<html lang={locale}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -84,6 +85,7 @@ const structuredData = JSON.stringify({
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content={locale === 'en' ? 'en_US' : 'id_ID'} />
+    <meta property="og:locale:alternate" content={locale === 'en' ? 'id_ID' : 'en_US'} />
     <meta property="og:site_name" content="Cave of Chi" />
     <meta property="og:title" content={localizedTitle} />
     <meta property="og:description" content={localizedDescription} />
@@ -102,7 +104,7 @@ const structuredData = JSON.stringify({
     <slot name="head" />
   </head>
   <body>
-    <a class="skip-link" href="#main">{translate(locale, 'Lewati ke konten')}</a>
+    <a class="skip-link" href="#main">{t('skipToContent')}</a>
     <div class="grain" aria-hidden="true"></div>
     <AnnouncementBar />
     <SiteHeader variant={headerVariant} />

@@ -1,16 +1,36 @@
 ---
-import { FAQ } from "@/data/faq";
-import { translate } from "@/lib/i18n";
-const locale = Astro.locals.locale;
+import { createT, toLocale } from "@/i18n";
+import { messages } from "./FaqList.messages";
+const t = createT(toLocale(Astro.currentLocale), messages);
+
+const items = [
+  { question: "openingQuestion", answer: "openingAnswer" },
+  { question: "beginnersQuestion", answer: "beginnersAnswer" },
+  { question: "pricesQuestion", answer: "pricesAnswer" },
+  { question: "capacityQuestion", answer: "capacityAnswer" },
+  { question: "privateQuestion", answer: "privateAnswer" },
+  { question: "bookingQuestion", answer: "bookingAnswer" },
+] as const;
+
+const faqJsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: items.map((item) => ({
+    "@type": "Question",
+    name: t(item.question),
+    acceptedAnswer: { "@type": "Answer", text: t(item.answer) },
+  })),
+}).replaceAll("<", "\\u003c");
 ---
 <div class="faq-list">
-  {FAQ.map((item, index) => (
+  {items.map((item, index) => (
     <details open={index === 0}>
-      <summary>{translate(locale, item.q)}</summary>
-      <p>{translate(locale, item.a)}</p>
+      <summary>{t(item.question)}</summary>
+      <p>{t(item.answer)}</p>
     </details>
   ))}
 </div>
+<script type="application/ld+json" set:html={faqJsonLd} />
 
 <style>
   .faq-list {

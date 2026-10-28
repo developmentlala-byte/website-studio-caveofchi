@@ -1,0 +1,35 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { createT, localizedPath, toLocale } from "@/i18n";
+import { messages } from "./NotFound.messages";
+const locale = toLocale(Astro.currentLocale);
+const t = createT(locale, messages);
+---
+<BaseLayout
+  title={t("seoTitle")}
+  description={t("seoDescription")}
+  noindex
+>
+  <section class="not-found section container">
+    <div class="eyebrow">404 / {t("notFound")}</div>
+    <h1 class="heading">{t("titleStart")}<br /><em class="script">{t("titleEnd")}</em></h1>
+    <a href={localizedPath(locale, '/')}>{t("backHome")} <span aria-hidden="true">↗</span></a>
+  </section>
+</BaseLayout>
+
+<style>
+  .not-found {
+    min-height: 55vh;
+  }
+
+  .not-found .heading {
+    margin: 18px 0 30px;
+  }
+
+  .not-found a {
+    display: inline-flex;
+    gap: 14px;
+    color: var(--umber);
+    font-size: 12px;
+  }
+</style>

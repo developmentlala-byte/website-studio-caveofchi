@@ -1,0 +1,26 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ExperiencesSection from "@/components/events/ExperiencesSection.astro";
+import PageHeader from "@/components/layout/PageHeader.astro";
+import { getUpcomingEvents } from "@/lib/events";
+import { fetchStudios } from "@/lib/api/studios";
+import { createT, toLocale } from "@/i18n";
+import { messages } from "./Experiences.messages";
+
+const [events, studios] = await Promise.all([
+  getUpcomingEvents(),
+  fetchStudios(),
+]);
+const t = createT(toLocale(Astro.currentLocale), messages);
+---
+<BaseLayout
+  title={t("seoTitle")}
+  description={t("seoDescription")}
+>
+  <PageHeader
+    eyebrow={t("eyebrow")}
+    title={t("title")}
+    description={t("description")}
+  />
+  <ExperiencesSection events={events} studios={studios} showIntro={false} />
+</BaseLayout>

@@ -1,0 +1,24 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHeader from "@/components/layout/PageHeader.astro";
+import ScheduleCalendar from "@/components/schedule/ScheduleCalendar.astro";
+import { getUpcomingEvents } from "@/lib/events";
+import { createT, toLocale } from "@/i18n";
+import { messages } from "./Schedule.messages";
+
+const events = await getUpcomingEvents();
+const t = createT(toLocale(Astro.currentLocale), messages);
+---
+<BaseLayout
+  title={t("seoTitle")}
+  description={t("seoDescription")}
+>
+  <PageHeader
+    eyebrow={t("eyebrow")}
+    title={t("title")}
+    description={t("description")}
+  />
+  <section class="section container">
+    <ScheduleCalendar events={events} />
+  </section>
+</BaseLayout>

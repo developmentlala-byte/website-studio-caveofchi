@@ -8,7 +8,7 @@ Dokumen ini menyimpan catatan migrasi awal; beberapa contoh di bawah masih mengg
 - **Server output:** `output: 'server'` dengan `@astrojs/vercel`.
 - **Data dari sistemmu:** event dan studio lewat endpoint API publik saat request halaman; booking lewat API dari browser.
 - **Copilot:** aturan ditaruh di `.github/copilot-instructions.md`, dibaca otomatis oleh Copilot.
-- **Lokalisasi:** Bahasa Indonesia menjadi default tanpa prefix; versi English memakai prefix `/en`. Teks antarmuka dikelola di `src/lib/i18n.ts`, dan data event/studio dari API tidak diterjemahkan otomatis.
+- **Lokalisasi:** Bahasa Indonesia menjadi default tanpa prefix; versi English memakai prefix `/en`. Teks antarmuka memakai pesan bilingual bertipe dengan key semantik di file `*.messages.ts` milik komponen/view; data event/studio dari API tidak diterjemahkan otomatis.
 
 ## Konsekuensi SSR + data dari sistem
 

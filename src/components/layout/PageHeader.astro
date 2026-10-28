@@ -1,15 +1,12 @@
 ---
-import { translate } from '@/lib/i18n';
-
 interface Props { eyebrow: string; title: string; description?: string }
 const { eyebrow, title, description } = Astro.props;
-const locale = Astro.locals.locale;
 ---
 <section class="page-header">
   <div class="container">
-    <div class="eyebrow">{translate(locale, eyebrow)}</div>
-    <h1 class="heading">{translate(locale, title)}</h1>
-    {description && <p class="lead">{translate(locale, description)}</p>}
+    <div class="eyebrow">{eyebrow}</div>
+    <h1 class="heading">{title}</h1>
+    {description && <p class="lead">{description}</p>}
   </div>
 </section>
 <style>

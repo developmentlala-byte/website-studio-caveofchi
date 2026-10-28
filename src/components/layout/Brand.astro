@@ -1,13 +1,13 @@
 ---
 import logo from '@/assets/images/logo-cave-of-chi.png';
-import { localizedPath } from '@/lib/i18n';
+import { localizedPath, toLocale } from '@/i18n';
 
 interface Props {
   size?: 'md' | 'lg';
 }
 
 const { size = 'md' } = Astro.props;
-const locale = Astro.locals.locale;
+const locale = toLocale(Astro.currentLocale);
 
 // Tinggi tampil (px). Gambar dibuat 2x lebih besar untuk layar retina,
 // lalu ukuran tampilnya diatur lewat CSS di bawah.

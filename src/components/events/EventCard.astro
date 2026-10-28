@@ -2,19 +2,29 @@
 import BookButton from '@/components/booking/BookButton.astro';
 import type { CaveEvent } from '@/lib/events';
 import { getCategoryLabel } from '@/lib/site';
-import { localizedPath, translate } from '@/lib/i18n';
+import { createT, localizedPath, toLocale } from '@/i18n';
+import { messages } from './EventCard.messages';
 import {
   formatDateShort,
-  formatDuration,
+  getDurationParts,
   formatIDR,
-  formatSeatsLeft,
   formatTime,
 } from '@/lib/format';
 
 type EventSession = CaveEvent['data']['sessions'][number];
 interface Props { event: CaveEvent; hidden?: boolean }
 const { event, hidden = false } = Astro.props;
-const locale = Astro.locals.locale;
+const locale = toLocale(Astro.currentLocale);
+const t = createT(locale, messages);
+const formatDuration = (duration: number) => {
+  const { hours, minutes } = getDurationParts(duration);
+  return [
+    hours > 0 ? t(hours === 1 ? 'oneHour' : 'hours', { count: hours }) : '',
+    minutes > 0
+      ? t(minutes === 1 ? 'oneMinute' : 'minutes', { count: minutes })
+      : '',
+  ].filter(Boolean).join(' ');
+};
 const d = event.data;
 const sessions: EventSession[] = d.sessions
   .filter((session) => session.startsAt.getTime() >= Date.now())
@@ -35,6 +45,10 @@ const sessionOptions = sessions.map((session) => ({
   isBookable: session.isBookable,
   salesStatus: session.salesStatus,
 }));
+const seatsLeft = (seats: number) =>
+  locale === 'en'
+    ? t(seats === 1 ? 'oneSpotLeft' : 'spotsLeft', { seats })
+    : t('spotsLeft', { seats });
 
 // Harga antar sesi dapat berbeda; tampilkan harga terendah untuk rentang harga.
 const prices = sessions.map((session) => session.price);
@@ -43,21 +57,21 @@ const displayPrice = hasPriceRange
   ? Math.min(...prices)
   : featuredSession?.price;
 const priceLabel = sessions.length === 0
-  ? translate(locale, 'Harga')
+  ? t('price')
   : hasPriceRange
-    ? translate(locale, 'Mulai dari')
-    : translate(locale, 'Per peserta');
+    ? t('startingAt')
+    : t('perGuest');
 const featuredStatus = featuredSession?.salesStatus === 'coming_soon'
-  ? `${translate(locale, 'Dibuka')} ${featuredSession.registrationOpensAt
+  ? `${t('salesOpen')} ${featuredSession.registrationOpensAt
       ? formatDateShort(featuredSession.registrationOpensAt, locale)
-      : translate(locale, 'segera')}`
+      : t('soon')}`
   : featuredSession?.salesStatus === 'sold_out'
-    ? translate(locale, 'Kuota habis')
+    ? t('soldOut')
     : featuredSession?.salesStatus === 'closed'
-      ? translate(locale, 'Pendaftaran ditutup')
+      ? t('registrationClosed')
       : featuredSession
-        ? formatSeatsLeft(featuredSession.seatsLeft, locale)
-        : translate(locale, 'Jadwal segera hadir');
+        ? seatsLeft(featuredSession.seatsLeft)
+        : t('scheduleSoon');
 ---
 <article
   class="event-card"
@@ -75,15 +89,15 @@ const featuredStatus = featuredSession?.salesStatus === 'coming_soon'
   <div class="event-info">
     <div class="event-sub" data-featured-studio>
       {featuredSession
-        ? `${featuredSession.studioName} · ${formatDuration(featuredSession.durationMinutes, locale)}`
-        : translate(locale, 'Jadwal segera hadir')}
+        ? `${featuredSession.studioName} · ${formatDuration(featuredSession.durationMinutes)}`
+        : t('scheduleSoon')}
     </div>
     <h3><a href={localizedPath(locale, `/experiences/${event.id}`)}>{d.title}</a></h3>
     <div class="event-details">
       <span data-featured-date>
         {featuredSession
-          ? `${formatDateShort(featuredSession.startsAt, locale)} · ${formatTime(featuredSession.startsAt)} WIB`
-          : translate(locale, 'Tanggal segera diumumkan')}
+          ? `${formatDateShort(featuredSession.startsAt, locale)} · ${formatTime(featuredSession.startsAt, locale)} WIB`
+          : t('dateSoon')}
       </span>
       <span data-featured-seats>{featuredStatus}</span>
     </div>
@@ -92,24 +106,24 @@ const featuredStatus = featuredSession?.salesStatus === 'coming_soon'
         <small>{priceLabel}</small>
         <span data-featured-price>
           {displayPrice !== undefined
-            ? formatIDR(displayPrice)
+            ? formatIDR(displayPrice, locale)
             : sessions.length === 0
-              ? translate(locale, 'Segera diumumkan')
+              ? t('announcedSoon')
               : '–'}
         </span>
       </div>
       {featuredSession ? (
         <BookButton event={event} session={featuredSession}>
           {featuredSession.isBookable
-            ? translate(locale, 'Pesan sekarang ↗')
+            ? t('bookNow')
             : featuredSession.salesStatus === 'coming_soon'
-              ? translate(locale, 'Segera dibuka')
+              ? t('openingSoon')
               : featuredSession.salesStatus === 'sold_out'
-                ? translate(locale, 'Kuota habis')
-                : translate(locale, 'Pendaftaran ditutup')}
+                ? t('soldOut')
+                : t('registrationClosed')}
         </BookButton>
       ) : (
-        <a class="book details-link" href={localizedPath(locale, `/experiences/${event.id}`)}>{translate(locale, 'Lihat detail')} ↗</a>
+        <a class="book details-link" href={localizedPath(locale, `/experiences/${event.id}`)}>{t('viewDetails')} ↗</a>
       )}
     </div>
   </div>

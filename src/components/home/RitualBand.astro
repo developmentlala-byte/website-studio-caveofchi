@@ -1,27 +1,30 @@
 ---
 // RitualBand.astro
 import sound from '@/assets/images/sound.webp';
-import { RITUAL_STEPS } from '@/data/ritual';
-import { translate } from '@/lib/i18n';
-const locale = Astro.locals.locale;
+import { createT, toLocale } from '@/i18n';
+import { messages } from './RitualBand.messages';
+const t = createT(toLocale(Astro.currentLocale), messages);
+
+const steps = [
+  { title: '01. Arrive', text: 'stepArrive' },
+  { title: '02. Create', text: 'stepCreate' },
+  { title: '03. Connect', text: 'stepConnect' },
+  { title: '04. Return', text: 'stepReturn' },
+] as const;
 ---
 <section class="ritual">
   <div class="ritual-photo">
     <img src={sound.src} width={sound.width} height={sound.height}
-      alt={locale === 'en'
-        ? 'A candlelit sound healing session with a singing bowl and gong'
-        : 'Suasana sound healing dengan singing bowl dan gong di dalam cave bercahaya lilin'} loading="lazy" />
+      alt={t('imageAlt')} loading="lazy" />
   </div>
   <div class="ritual-copy">
-    <div class="eyebrow">05 / {translate(locale, 'The Cave of Chi way')}</div>
+    <div class="eyebrow">05 / {t('eyebrow')}</div>
     <h2>
-      {locale === 'en'
-        ? <>Come as<br />you <em class="script-cstt-color">are.</em></>
-        : <>Datanglah<br /><em class="script-cstt-color">apa adanya.</em></>}
+      {t('titleStart')}<br /><em class="script-cstt-color">{t('titleEnd')}</em>
     </h2>
-    <p>{translate(locale, 'Tidak perlu jadi seniman untuk berkarya. Tidak perlu tahu apa-apa tentang meditasi untuk mulai. Di sini, rasa penasaran sudah cukup untuk memulai.')}</p>
+    <p>{t('introduction')}</p>
     <div class="ritual-steps">
-      {RITUAL_STEPS.map((s) => (<div><strong>{s.title}</strong><small>{translate(locale, s.text)}</small></div>))}
+      {steps.map((s) => (<div><strong>{s.title}</strong><small>{t(s.text)}</small></div>))}
     </div>
   </div>
 </section>

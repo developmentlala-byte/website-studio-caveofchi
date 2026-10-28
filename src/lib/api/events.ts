@@ -2,6 +2,10 @@ import {
   fetchPublicCollection,
   resolvePublicAssetUrl,
 } from "@/lib/api/public";
+import type {
+  PublicBookingEvent,
+  PublicBookingSession,
+} from "@/lib/api/booking-events";
 
 const API_URL = import.meta.env.PUBLIC_API_URL?.replace(/\/+$/, "");
 
@@ -16,27 +20,6 @@ export interface PublicEventImage {
 export interface PublicSessionAvailability {
   sessionId: string;
   seatsLeft: number;
-}
-
-export interface PublicBookingSession {
-  sessionId: string;
-  startsAt: string;
-  durationMinutes: number;
-  price: number;
-  seatsLeft: number;
-  studioSlug: string;
-  studioName: string;
-  registrationOpensAt: string | null;
-  registrationClosesAt: string | null;
-  isBookable: boolean;
-  salesStatus: "coming_soon" | "open" | "sold_out" | "closed";
-}
-
-export interface PublicBookingEvent {
-  slug: string;
-  title: string;
-  status: "draft" | "published" | "closed" | "archived";
-  sessions: PublicBookingSession[];
 }
 
 export async function fetchPublicBookingEvents(): Promise<PublicBookingEvent[]> {

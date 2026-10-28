@@ -1,0 +1,199 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Gallery from "@/components/common/Gallery.astro";
+import { fetchStudios } from "@/lib/api/studios";
+import { getUpcomingEvents } from "@/lib/events";
+import { formatDateShort, formatTime } from "@/lib/format";
+import { createT, localizedPath, toLocale } from "@/i18n";
+import { messages } from "./StudioDetail.messages";
+
+interface Props {
+  slug: string;
+}
+
+const { slug } = Astro.props;
+const locale = toLocale(Astro.currentLocale);
+const t = createT(locale, messages);
+const studios = await fetchStudios();
+const studio = studios.find((item) => item.slug === slug);
+if (!studio) Astro.response.status = 404;
+const events = studio ? await getUpcomingEvents() : [];
+const studioEvents = events.flatMap((event) => {
+  const sessions = event.data.sessions.filter((session) => session.space === studio?.slug);
+  return sessions.length > 0 ? [{ event, sessions }] : [];
+});
+const gallery = [
+  ...(studio?.coverImageUrl
+    ? [{ url: studio.coverImageUrl, altText: studio.name }]
+    : []),
+  ...(studio?.images ?? []),
+].filter((image, index, images) =>
+  images.findIndex((candidate) => candidate.url === image.url) === index,
+);
+---
+<BaseLayout title={studio ? `${studio.name} — Cave of Chi` : `${t("notFoundTitle")} — Cave of Chi`} description={studio?.shortDescription ?? studio?.description ?? t("notFoundDescription")}>
+  {studio ? (
+  <article class="studio-detail section container">
+    <a class="back-link" href={localizedPath(locale, "/#spaces")}>← {t("allStudios")}</a>
+    <div class="eyebrow">{studio.code} · {t("capacity")} {studio.maxCapacity} {t("people")}</div>
+    <h1 class="heading">{studio.name}</h1>
+    {studio.shortDescription && <p class="lead">{studio.shortDescription}</p>}
+
+    <Gallery images={gallery} label={studio.name} />
+
+    {studio.description && (
+      <div class="description">
+        {studio.description.split("\n\n").map((paragraph) => <p>{paragraph}</p>)}
+      </div>
+    )}
+
+    <dl class="facts">
+      <div><dt>{t("studioCode")}</dt><dd>{studio.code}</dd></div>
+      <div><dt>{t("capacity")}</dt><dd>{studio.maxCapacity} {t("people")}</dd></div>
+    </dl>
+
+    <section class="studio-events" aria-labelledby="studio-events-title">
+      <h2 id="studio-events-title">{t("eventsAt")} {studio.name}</h2>
+      {studioEvents.length > 0 ? (
+        <div class="event-list">
+          {studioEvents.map(({ event, sessions }) => (
+            <article class="event-item">
+              <div>
+                <h3><a href={localizedPath(locale, `/experiences/${event.id}`)}>{event.data.title}</a></h3>
+                <p>{event.data.subtitle}</p>
+                <ul>
+                  {sessions.map((session) => (
+                    <li>{formatDateShort(session.startsAt, locale)} · {formatTime(session.startsAt, locale)} WIB</li>
+                  ))}
+                </ul>
+              </div>
+              <a class="event-link" href={localizedPath(locale, `/experiences/${event.id}`)} aria-label={`${t("viewEvent")} ${event.data.title}`}>↗</a>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p class="empty-events">{t("noUpcomingEvents")}</p>
+      )}
+    </section>
+  </article>
+  ) : (
+    <section class="studio-detail section container">
+      <h1 class="heading">{t("notFoundTitle")}</h1>
+      <p class="lead">{t("notFoundDescription")}</p>
+      <a class="back-link" href={localizedPath(locale, "/#spaces")}>← {t("allStudios")}</a>
+    </section>
+  )}
+</BaseLayout>
+
+<style>
+  .back-link {
+    display: inline-block;
+    margin-bottom: 28px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .studio-detail .heading {
+    margin: 12px 0;
+  }
+
+  .lead {
+    max-width: 760px;
+    margin: 0 0 26px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+
+  .description {
+    max-width: 760px;
+    margin-top: 30px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+
+  .facts {
+    display: flex;
+    gap: 48px;
+    margin: 28px 0 44px;
+    padding: 22px 0;
+    border-block: 1px solid var(--line);
+  }
+
+  .facts div {
+    display: grid;
+    gap: 5px;
+  }
+
+  .facts dt {
+    color: var(--muted);
+    font-size: 10px;
+    text-transform: uppercase;
+  }
+
+  .facts dd {
+    margin: 0;
+    color: var(--umber);
+    font-size: 13px;
+  }
+
+  .studio-events h2 {
+    color: var(--umber);
+    font-family: var(--font-heading);
+    font-size: 32px;
+    font-weight: 500;
+  }
+
+  .event-list {
+    border-top: 1px solid var(--line);
+  }
+
+  .event-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .event-item h3 {
+    margin: 0;
+    color: var(--umber);
+    font-family: var(--font-heading);
+    font-size: 24px;
+    font-weight: 500;
+  }
+
+  .event-item p,
+  .event-item ul,
+  .empty-events {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .event-item ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 22px;
+    margin: 8px 0 0;
+    padding-left: 18px;
+  }
+
+  .event-link {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    color: var(--umber);
+  }
+
+  @media (max-width: 740px) {
+    .facts {
+      gap: 24px;
+    }
+  }
+</style>

@@ -1,23 +1,4 @@
 ---
-import BaseLayout from "@/layouts/BaseLayout.astro";
-import ExperiencesSection from "@/components/events/ExperiencesSection.astro";
-import PageHeader from "@/components/layout/PageHeader.astro";
-import { getUpcomingEvents } from "@/lib/events";
-import { fetchStudios } from "@/lib/api/studios";
-
-const [events, studios] = await Promise.all([
-  getUpcomingEvents(),
-  fetchStudios(),
-]);
+import Experiences from "@/views/Experiences.astro";
 ---
-<BaseLayout
-  title="Workshop & Wellness Experiences | Cave of Chi"
-  description="Jelajahi workshop kreatif, ritual wellness, dan event komunitas di Cave of Chi. Cek jadwal, harga, dan ketersediaan, lalu pesan tempat langsung melalui website."
->
-  <PageHeader
-    eyebrow="Experiences"
-    title="Find your class."
-    description="Pilih workshop kreatif, ritual wellness, atau acara komunitas, lalu pesan tempat lewat website."
-  />
-  <ExperiencesSection events={events} studios={studios} showIntro={false} />
-</BaseLayout>
+<Experiences />

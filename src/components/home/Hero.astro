@@ -1,10 +1,12 @@
 ---
 import type { PublicStudio } from '@/lib/api/studios';
-import { translate } from '@/lib/i18n';
+import { createT, toLocale } from '@/i18n';
+import { messages } from './Hero.messages';
 
 interface Props { studios: PublicStudio[] }
 const { studios } = Astro.props;
-const locale = Astro.locals.locale;
+const locale = toLocale(Astro.currentLocale);
+const t = createT(locale, messages);
 
 /** Jeda antar slide (ms). */
 const AUTOPLAY_MS = 6000;
@@ -28,7 +30,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 ---
 <section
   class="hero"
-  aria-label={locale === 'en' ? 'Welcome to Cave of Chi' : 'Selamat datang di Cave of Chi'}
+  aria-label={t('ariaLabel')}
   data-hero
   data-locale={locale}
   data-fade={FADE_MS}
@@ -41,7 +43,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
           <img
             src={i === 0 ? studio.coverImageUrl : undefined}
             data-src={i === 0 ? undefined : studio.coverImageUrl}
-            alt={locale === 'en' ? `${studio.name} interior` : `Interior ${studio.name}`}
+            alt={t('studioAlt', { name: studio.name })}
             width="1280"
             height="800"
             decoding="async"
@@ -56,23 +58,23 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
   <div class="hero-content">
     <div class="hero-copy">
-      <div class="eyebrow hero-kicker">{translate(locale, 'A creative social sanctuary')}</div>
+      <div class="eyebrow hero-kicker">{t('eyebrow')}</div>
       <h1>Cave<br /><em>of Chi.</em></h1>
-      <p>{translate(locale, 'A space to make, to feel, and to belong. Temukan workshop dan ritual yang cocok, lalu pilih jadwal dan pesan tempat langsung di website.')}</p>
-      <a class="cta-light" href={locale === 'en' ? '/en/experiences' : '/experiences'} data-book>{translate(locale, 'Lihat jadwal & pesan')} <span aria-hidden="true">↗</span></a>
+      <p>{t('lead')}</p>
+      <a class="cta-light" href={locale === 'en' ? '/en/experiences' : '/experiences'} data-book>{t('scheduleCta')} <span aria-hidden="true">↗</span></a>
     </div>
-    <div class="hero-aside-label" aria-hidden="true">{translate(locale, 'The art of being present')}</div>
+    <div class="hero-aside-label" aria-hidden="true">{t('presence')}</div>
     <div class="hero-bottom" aria-hidden="true">
-      <span class="scroll-indicator">{translate(locale, 'Scroll to discover')}</span>
+      <span class="scroll-indicator">{t('scroll')}</span>
       {initialLabel && <span data-label>{initialLabel}</span>}
     </div>
 
     {multiple && (
-      <div class="hero-controls" role="group" aria-label={translate(locale, 'Kontrol galeri studio')}>
+      <div class="hero-controls" role="group" aria-label={t('galleryControls')}>
         <button type="button" class="hc-toggle" data-toggle
-          data-pause-label={translate(locale, 'Jeda pergantian otomatis')}
-          data-play-label={translate(locale, 'Putar pergantian otomatis')}
-          aria-label={translate(locale, 'Jeda pergantian otomatis')}>
+          data-pause-label={t('pauseSlideshow')}
+          data-play-label={t('playSlideshow')}
+          aria-label={t('pauseSlideshow')}>
           <svg class="icon-pause" viewBox="0 0 14 14" aria-hidden="true" focusable="false">
             <path d="M3 2h2.5v10H3zM8.5 2H11v10H8.5z" />
           </svg>
@@ -88,7 +90,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
                 class="hc-dot"
                 data-dot={i}
                 data-name={studio.name}
-                aria-label={`${translate(locale, 'Tampilkan')} ${studio.name}`}
+                aria-label={`${t('show')} ${studio.name}`}
                 aria-current={i === 0 ? 'true' : undefined}
               >
                 <span class="hc-fill"></span>

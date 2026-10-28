@@ -1,74 +1,75 @@
 ---
-import { translate } from '@/lib/i18n';
-const locale = Astro.locals.locale;
+import { createT, toLocale } from '@/i18n';
+import { messages } from './BookingModal.messages';
+const t = createT(toLocale(Astro.currentLocale), messages);
 ---
 <dialog id="booking-dialog" aria-labelledby="booking-title" aria-describedby="booking-description">
   <div class="modal">
     <header class="modal-header">
       <div>
-        <span class="eyebrow">{translate(locale, 'Cave of Chi / Booking')}</span>
-        <h2 id="booking-title" data-bind="heading">{translate(locale, 'Booking baru')}</h2>
+        <span class="eyebrow">{t('dialogLabel')}</span>
+        <h2 id="booking-title" data-bind="heading">{t('newBooking')}</h2>
         <p id="booking-description" data-bind="description">
-          {translate(locale, 'Pilih event dan sesi, lalu isi data pemesan.')}
+          {t('chooseSession')}
         </p>
       </div>
-      <button type="button" class="close-modal" data-close aria-label={translate(locale, 'Tutup booking')}>×</button>
+      <button type="button" class="close-modal" data-close aria-label={t('closeBooking')}>×</button>
     </header>
 
-    <ol class="stepper" aria-label={translate(locale, 'Langkah booking')}>
-      <li class="active" data-step-indicator="1"><span>1</span><b>{translate(locale, 'Sesi & data')}</b></li>
-      <li data-step-indicator="2"><span>2</span><b>{translate(locale, 'Konfirmasi')}</b></li>
-      <li data-step-indicator="3"><span>3</span><b>{translate(locale, 'Selesai')}</b></li>
+    <ol class="stepper" aria-label={t('bookingSteps')}>
+      <li class="active" data-step-indicator="1"><span>1</span><b>{t('sessionDetails')}</b></li>
+      <li data-step-indicator="2"><span>2</span><b>{t('confirmation')}</b></li>
+      <li data-step-indicator="3"><span>3</span><b>{t('complete')}</b></li>
     </ol>
 
     <form data-form>
       <section class="step-content" data-step-panel="1">
         <div class="selection-column">
           <div class="field">
-            <label for="bk-event-search">Event</label>
+            <label for="bk-event-search">{t('event')}</label>
             <input
               id="bk-event-search"
               type="search"
               autocomplete="off"
-              placeholder={translate(locale, 'Cari nama event')}
-              aria-label={translate(locale, 'Cari event')}
+              placeholder={t('searchEventName')}
+              aria-label={t('searchEvent')}
               data-event-search
             />
           </div>
-          <div class="choice-list event-list" role="listbox" aria-label="Event" data-events></div>
-          <nav class="event-pagination" aria-label={translate(locale, 'Navigasi halaman event')} data-event-pagination hidden>
-            <button type="button" data-event-previous>{translate(locale, 'Sebelumnya')}</button>
+          <div class="choice-list event-list" role="listbox" aria-label={t('event')} data-events></div>
+          <nav class="event-pagination" aria-label={t('eventPagination')} data-event-pagination hidden>
+            <button type="button" data-event-previous>{t('previous')}</button>
             <span data-event-page aria-live="polite"></span>
-            <button type="button" data-event-next>{translate(locale, 'Berikutnya')}</button>
+            <button type="button" data-event-next>{t('next')}</button>
           </nav>
-          <p class="load-message" role="status" data-events-status>{translate(locale, 'Memuat event...')}</p>
-          <button type="button" class="retry-button" data-retry hidden>{translate(locale, 'Coba lagi')}</button>
+          <p class="load-message" role="status" data-events-status>{t('loadingEvents')}</p>
+          <button type="button" class="retry-button" data-retry hidden>{t('tryAgain')}</button>
 
           <div class="field">
             <div class="session-heading">
-              <span class="label">{translate(locale, 'Sesi')}</span>
+              <span class="label">{t('session')}</span>
               <span class="micro" data-session-count></span>
             </div>
-            <div class="choice-list session-list" role="listbox" aria-label={translate(locale, 'Sesi')} data-sessions></div>
+            <div class="choice-list session-list" role="listbox" aria-label={t('session')} data-sessions></div>
           </div>
         </div>
 
         <aside class="customer-column">
-          <h3>{translate(locale, 'Data pemesan')}</h3>
+          <h3>{t('customerDetails')}</h3>
           <div class="field">
-            <label for="bk-name">{translate(locale, 'Nama customer')}</label>
+            <label for="bk-name">{t('fullName')}</label>
             <input
               id="bk-name"
               name="name"
               type="text"
               autocomplete="name"
-              placeholder={translate(locale, 'Nama lengkap')}
+              placeholder={t('fullName')}
               required
               maxlength="150"
             />
           </div>
           <div class="field">
-            <label for="bk-phone">{translate(locale, 'Nomor telepon')}</label>
+            <label for="bk-phone">{t('phoneNumber')}</label>
             <input
               id="bk-phone"
               name="phone"
@@ -82,63 +83,63 @@ const locale = Astro.locals.locale;
           </div>
 
           <div class="field">
-            <label for="bk-qty">{translate(locale, 'Jumlah slot')}</label>
+            <label for="bk-qty">{t('guestCount')}</label>
             <div class="qty-control">
-              <button type="button" data-step="-1" aria-label={translate(locale, 'Kurangi slot')}>−</button>
+              <button type="button" data-step="-1" aria-label={t('decreaseGuests')}>−</button>
               <input id="bk-qty" name="quantity" type="number" min="1" max="20" value="1" />
-              <button type="button" data-step="1" aria-label={translate(locale, 'Tambah slot')}>+</button>
+              <button type="button" data-step="1" aria-label={t('increaseGuests')}>+</button>
             </div>
             <span class="micro" data-max-quantity></span>
           </div>
 
           <dl class="price-summary">
-            <div><dt>{translate(locale, 'Pembayaran')}</dt><dd>Midtrans</dd></div>
-            <div><dt>{translate(locale, 'Harga / slot')}</dt><dd data-bind="unit-price">–</dd></div>
-            <div class="total"><dt>{translate(locale, 'Total')}</dt><dd data-bind="total">–</dd></div>
+            <div><dt>{t('payment')}</dt><dd>Midtrans</dd></div>
+            <div><dt>{t('pricePerGuest')}</dt><dd data-bind="unit-price">–</dd></div>
+            <div class="total"><dt>{t('total')}</dt><dd data-bind="total">–</dd></div>
           </dl>
         </aside>
       </section>
 
       <section class="step-content confirmation" data-step-panel="2" hidden>
         <div class="confirm-section">
-          <h3>{translate(locale, 'Event & sesi')}</h3>
+          <h3>{t('eventAndSession')}</h3>
           <dl>
-            <div><dt>Event</dt><dd data-bind="event-name"></dd></div>
-            <div><dt>{translate(locale, 'Studio')}</dt><dd data-bind="studio-name"></dd></div>
-            <div><dt>{translate(locale, 'Tanggal')}</dt><dd data-bind="session-date"></dd></div>
-            <div><dt>{translate(locale, 'Waktu')}</dt><dd data-bind="session-time"></dd></div>
+            <div><dt>{t('event')}</dt><dd data-bind="event-name"></dd></div>
+            <div><dt>{t('studio')}</dt><dd data-bind="studio-name"></dd></div>
+            <div><dt>{t('date')}</dt><dd data-bind="session-date"></dd></div>
+            <div><dt>{t('time')}</dt><dd data-bind="session-time"></dd></div>
           </dl>
         </div>
         <div class="confirm-section">
-          <h3>{translate(locale, 'Pemesan')}</h3>
+          <h3>{t('customer')}</h3>
           <dl>
-            <div><dt>{translate(locale, 'Nama')}</dt><dd data-bind="customer-name"></dd></div>
-            <div><dt>{translate(locale, 'Telepon')}</dt><dd data-bind="customer-phone"></dd></div>
+            <div><dt>{t('name')}</dt><dd data-bind="customer-name"></dd></div>
+            <div><dt>{t('phone')}</dt><dd data-bind="customer-phone"></dd></div>
           </dl>
         </div>
         <div class="confirm-section">
-          <h3>{translate(locale, 'Pembayaran')}</h3>
+          <h3>{t('payment')}</h3>
           <dl>
-            <div><dt>{translate(locale, 'Jumlah slot')}</dt><dd data-bind="quantity"></dd></div>
-            <div><dt>{translate(locale, 'Harga / slot')}</dt><dd data-bind="confirm-unit-price"></dd></div>
-            <div class="total"><dt>{translate(locale, 'Total')}</dt><dd data-bind="confirm-total"></dd></div>
+            <div><dt>{t('guestCount')}</dt><dd data-bind="quantity"></dd></div>
+            <div><dt>{t('pricePerGuest')}</dt><dd data-bind="confirm-unit-price"></dd></div>
+            <div class="total"><dt>{t('total')}</dt><dd data-bind="confirm-total"></dd></div>
           </dl>
           <p class="payment-note">
-            {translate(locale, 'Slot ditahan sementara selama proses pembayaran. Pembayaran diverifikasi otomatis oleh Midtrans.')}
+            {t('paymentNotice')}
           </p>
         </div>
       </section>
 
       <section class="success-panel" data-step-panel="3" hidden>
         <div class="success-icon" aria-hidden="true">✓</div>
-        <p class="eyebrow">{translate(locale, 'Booking berhasil dibuat')}</p>
-        <p class="micro">{translate(locale, 'Kode booking')}</p>
+        <p class="eyebrow">{t('bookingCreated')}</p>
+        <p class="micro">{t('bookingCode')}</p>
         <strong class="booking-code" data-bind="booking-code"></strong>
         <span class="booking-status" data-bind="payment-status"></span>
-        <p class="success-total">{translate(locale, 'Total')} <strong data-bind="success-total"></strong></p>
+        <p class="success-total">{t('total')} <strong data-bind="success-total"></strong></p>
         <p class="hold-message" data-bind="hold-message"></p>
         <a class="payment-link" data-payment-link target="_blank" rel="noopener noreferrer">
-          {translate(locale, 'Buka halaman pembayaran ↗')}
+          {t('paymentPage')}
         </a>
       </section>
 
@@ -147,17 +148,17 @@ const locale = Astro.locals.locale;
 
     <footer class="modal-footer">
       <div class="footer-total">
-        <span>{translate(locale, 'Total')}</span>
-        <strong data-bind="footer-total">{translate(locale, 'Pilih sesi untuk melihat total.')}</strong>
+        <span>{t('total')}</span>
+        <strong data-bind="footer-total">{t('chooseSessionForTotal')}</strong>
       </div>
       <div class="footer-actions">
-        <button type="button" class="secondary-button" data-action="cancel">{translate(locale, 'Batal')}</button>
-        <button type="button" class="secondary-button" data-action="back" hidden>{translate(locale, 'Ubah sesi')}</button>
-        <button type="button" class="primary-button" data-action="next" disabled>{translate(locale, 'Lanjut')}</button>
+        <button type="button" class="secondary-button" data-action="cancel">{t('cancel')}</button>
+        <button type="button" class="secondary-button" data-action="back" hidden>{t('changeSession')}</button>
+        <button type="button" class="primary-button" data-action="next" disabled>{t('continue')}</button>
         <button type="button" class="primary-button" data-action="confirm" hidden>
-          {translate(locale, 'Konfirmasi booking')}
+          {t('confirmBooking')}
         </button>
-        <button type="button" class="primary-button" data-action="done" hidden>{translate(locale, 'Selesai')}</button>
+        <button type="button" class="primary-button" data-action="done" hidden>{t('complete')}</button>
       </div>
     </footer>
   </div>

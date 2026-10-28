@@ -2,7 +2,8 @@
 import EventBrowser from '@/components/events/EventBrowser.astro';
 import type { CaveEvent } from '@/lib/events';
 import type { PublicStudio } from '@/lib/api/studios';
-import { localizedPath, translate } from '@/lib/i18n';
+import { createT, localizedPath, toLocale } from '@/i18n';
+import { messages } from './ExperiencesSection.messages';
 interface Props {
   events: CaveEvent[];
   studios: PublicStudio[];
@@ -10,7 +11,8 @@ interface Props {
   showIntro?: boolean;
 }
 const { events, studios, showAllLink = false, showIntro = true } = Astro.props;
-const locale = Astro.locals.locale;
+const locale = toLocale(Astro.currentLocale);
+const t = createT(locale, messages);
 ---
 <section class="section experiences" id="experiences">
   <div class="container">
@@ -20,10 +22,10 @@ const locale = Astro.locals.locale;
         <h2 class="heading">Find your <em class="script">ritual.</em></h2>
         <p>Pilih sesuatu yang ingin kamu coba. Tak perlu punya pengalaman sebelumnya.</p>
       </div>
-      <span class="tag"><span class="dot"></span>       {translate(locale, 'All workshops are beginner friendly')}</span>
+      <span class="tag"><span class="dot"></span>       All workshops are beginner friendly</span>
     </div> -->
     <EventBrowser events={events} studios={studios} showIntro={showIntro} />
-    {showAllLink && <a class="see-all" href={localizedPath(locale, '/experiences')}>{translate(locale, 'Lihat semua experiences →')}</a>}
+    {showAllLink && <a class="see-all" href={localizedPath(locale, '/experiences')}>{t('seeAll')}</a>}
   </div>
 </section>
 <style>

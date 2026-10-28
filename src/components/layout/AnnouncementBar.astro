@@ -1,9 +1,10 @@
 ---
-import { translate } from '@/lib/i18n';
-const locale = Astro.locals.locale;
+import { createT, toLocale } from '@/i18n';
+import { messages } from './AnnouncementBar.messages';
+const t = createT(toLocale(Astro.currentLocale), messages);
 ---
 <div class="top-note">
-  {translate(locale, 'A little slower, a little closer. ✳ Welcome to our creative sanctuary')}
+  {t('invitation')}
 </div>
 <style>
   .top-note {

@@ -2,31 +2,33 @@
 import EventCard from '@/components/events/EventCard.astro';
 import type { CaveEvent } from '@/lib/events';
 import type { PublicStudio } from '@/lib/api/studios';
-import { translate } from '@/lib/i18n';
+import { createT, toLocale } from '@/i18n';
+import { messages } from './EventBrowser.messages';
 
 interface Props { events: CaveEvent[]; studios: PublicStudio[]; showIntro?: boolean }
 const { events, studios, showIntro = true } = Astro.props;
-const locale = Astro.locals.locale;
+const locale = toLocale(Astro.currentLocale);
+const t = createT(locale, messages);
 ---
 <div data-event-browser>
   {showIntro && (
     <div class="section-head event-head">
       <div class="event-head-main">
-        <div class="eyebrow">03 / {locale === 'en' ? 'Curated for curious souls' : 'Pilihan untuk jiwa yang ingin tahu'}</div>
-        <h2 class="heading">{translate(locale, 'Find your')} <em class="script">{translate(locale, 'ritual')}</em>.</h2>
+        <div class="eyebrow">03 / {t('eyebrow')}</div>
+        <h2 class="heading">{t('findYour')} <em class="script">{t('class')}</em>.</h2>
         <p class="head-lead">
-          {translate(locale, 'Pilih sesuatu yang ingin kamu coba. Tak perlu punya pengalaman sebelumnya.')}
+          {t('trySomething')}
         </p>
       </div>
       <div class="head-badge">
         <span class="head-badge-dot" aria-hidden="true"></span>
-        {translate(locale, 'All workshops are beginner friendly')}
+        {t('beginnerFriendly')}
       </div>
     </div>
   )}
   {events.length > 0 && studios.length > 0 && (
-    <div class="filter-row studio-filter-row" role="group" aria-label={translate(locale, 'Filter studio')}>
-      <button type="button" class="filter active" data-studio-filter="all" aria-pressed="true">{translate(locale, 'Semua studio')}</button>
+    <div class="filter-row studio-filter-row" role="group" aria-label={t('filterStudios')}>
+      <button type="button" class="filter active" data-studio-filter="all" aria-pressed="true">{t('allStudios')}</button>
       {studios.map((studio) => (
         <button type="button" class="filter" data-studio-filter={studio.slug} aria-pressed="false">
           {studio.name}
@@ -37,13 +39,13 @@ const locale = Astro.locals.locale;
   <div class="event-grid">
     {events.map((event) => <EventCard event={event} />)}
   </div>
-  <nav class="event-pagination" aria-label={translate(locale, 'Navigasi halaman event')} data-event-pagination hidden>
-    <button type="button" data-event-previous>{translate(locale, 'Sebelumnya')}</button>
+  <nav class="event-pagination" aria-label={t('pagination')} data-event-pagination hidden>
+    <button type="button" data-event-previous>{t('previous')}</button>
     <span data-event-page aria-live="polite"></span>
-    <button type="button" data-event-next>{translate(locale, 'Berikutnya')}</button>
+    <button type="button" data-event-next>{t('next')}</button>
   </nav>
   <p class="empty-state" data-empty hidden={events.length > 0}>
-    {translate(locale, 'Belum ada event yang tersedia.')}
+    {t('noEvents')}
   </p>
 </div>
 
@@ -206,9 +208,12 @@ const locale = Astro.locals.locale;
 </style>
 
 <script>
-  import { translate, type Locale } from '@/lib/i18n';
+  import { createT, type Locale } from '@/i18n';
+  import { messages } from './EventBrowser.messages';
+  import { getDurationParts } from '@/lib/format';
 
   const locale: Locale = document.documentElement.lang === 'en' ? 'en' : 'id';
+  const t = createT(locale, messages);
   const intlLocale = locale === 'en' ? 'en-US' : 'id-ID';
 
   document.querySelectorAll<HTMLElement>('[data-event-browser]').forEach((root) => {
@@ -293,34 +298,36 @@ const locale = Astro.locals.locale;
     };
 
     const formatDuration = (minutes: number) => {
-      const hours = Math.floor(minutes / 60);
-      const remainingMinutes = minutes % 60;
-      if (locale === 'en') {
-        const hourLabel = (value: number) => `${value} ${value === 1 ? 'hour' : 'hours'}`;
-        const minuteLabel = (value: number) => `${value} ${value === 1 ? 'minute' : 'minutes'}`;
-        if (hours === 0) return minuteLabel(minutes);
-        if (remainingMinutes === 0) return hourLabel(hours);
-        return `${hourLabel(hours)} ${minuteLabel(remainingMinutes)}`;
-      }
-      if (hours === 0) return `${minutes} menit`;
-      if (remainingMinutes === 0) return `${hours} jam`;
-      return `${hours} jam ${remainingMinutes} menit`;
+      const { hours, minutes: remainingMinutes } = getDurationParts(minutes);
+      return [
+        hours > 0 ? t(hours === 1 ? 'oneHour' : 'hours', { count: hours }) : '',
+        remainingMinutes > 0
+          ? t(remainingMinutes === 1 ? 'oneMinute' : 'minutes', {
+              count: remainingMinutes,
+            })
+          : '',
+      ].filter(Boolean).join(' ');
     };
 
     const formatIDR = (price: number) =>
-      `Rp ${new Intl.NumberFormat('id-ID').format(price)}`;
+      new Intl.NumberFormat(intlLocale, {
+        style: 'currency',
+        currency: 'IDR',
+        maximumFractionDigits: 0,
+      }).format(price);
 
     const formatSalesStatus = (session: CardSession) => {
       if (session.salesStatus === 'coming_soon') {
         return session.registrationOpensAt
-          ? `${translate(locale, 'Dibuka')} ${formatSessionDate(session.registrationOpensAt).split(' · ')[0]}`
-          : translate(locale, 'Segera dibuka');
+          ? `${t('opens')} ${formatSessionDate(session.registrationOpensAt).split(' · ')[0]}`
+          : t('openingSoon');
       }
-      if (session.salesStatus === 'sold_out') return translate(locale, 'Kuota habis');
-      if (session.salesStatus === 'closed') return translate(locale, 'Pendaftaran ditutup');
-      return locale === 'en'
-        ? `${session.seatsLeft} ${session.seatsLeft === 1 ? 'spot' : 'spots'} left`
-        : `Sisa ${session.seatsLeft} kursi`;
+      if (session.salesStatus === 'sold_out') return t('soldOut');
+      if (session.salesStatus === 'closed') return t('registrationClosed');
+      return t(
+        locale === 'en' && session.seatsLeft !== 1 ? 'spotsLeft' : 'oneSpotLeft',
+        { seats: session.seatsLeft },
+      );
     };
 
     const renderCard = (card: HTMLElement) => {
@@ -332,10 +339,10 @@ const locale = Astro.locals.locale;
 
       if (sessions.length === 0) {
         if (selectedStudio !== 'all') return false;
-        if (studio) studio.textContent = translate(locale, 'Jadwal segera hadir');
-        if (date) date.textContent = translate(locale, 'Tanggal segera diumumkan');
-        if (seats) seats.textContent = translate(locale, 'Jadwal segera hadir');
-        if (price) price.textContent = translate(locale, 'Segera diumumkan');
+        if (studio) studio.textContent = t('scheduleSoon');
+        if (date) date.textContent = t('dateSoon');
+        if (seats) seats.textContent = t('scheduleSoon');
+        if (price) price.textContent = t('priceSoon');
         return true;
       }
 
@@ -370,12 +377,12 @@ const locale = Astro.locals.locale;
         button.dataset.bookable = String(isBookable);
         button.disabled = !isBookable;
         button.textContent = isBookable
-          ? translate(locale, 'Pesan sekarang ↗')
+          ? t('bookNow')
           : soldOut
-            ? translate(locale, 'Kuota habis')
+            ? t('soldOut')
             : closestSession.salesStatus === 'coming_soon'
-              ? translate(locale, 'Segera dibuka')
-              : translate(locale, 'Pendaftaran ditutup');
+              ? t('openingSoon')
+              : t('registrationClosed');
       }
       return true;
     };
@@ -399,17 +406,18 @@ const locale = Astro.locals.locale;
         pagination.hidden = matchingCards.length <= pageSize;
         previousButton.disabled = currentPage <= 1;
         nextButton.disabled = currentPage >= pageCount;
-        pageLabel.textContent = locale === 'en'
-          ? `Page ${currentPage} of ${pageCount}`
-          : `Halaman ${currentPage} dari ${pageCount}`;
+        pageLabel.textContent = t('pageLabel', {
+          current: currentPage,
+          total: pageCount,
+        });
       }
 
       if (empty) {
         empty.hidden = matchingCards.length > 0;
         if (matchingCards.length === 0 && selectedStudio !== 'all') {
-          empty.textContent = translate(locale, 'Tidak ada event yang sesuai dengan filter yang dipilih.');
+          empty.textContent = t('filteredEmpty');
         } else if (matchingCards.length === 0) {
-          empty.textContent = translate(locale, 'Belum ada event yang tersedia.');
+          empty.textContent = t('noEvents');
         }
       }
     };
